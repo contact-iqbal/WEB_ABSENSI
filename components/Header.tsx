@@ -1,0 +1,26 @@
+'use client';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBell, faUser } from '@fortawesome/free-solid-svg-icons';
+
+export default function Header() {
+  return (
+    <header className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+      <div className="flex items-center gap-4">
+        <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+          <FontAwesomeIcon icon={faBell} className="text-lg" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+
+        <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+          <FontAwesomeIcon icon={faUser} className="text-base" />
+          <span className="text-sm font-medium">Admin</span>
+        </button>
+      </div>
+    </header>
+  );
+}
