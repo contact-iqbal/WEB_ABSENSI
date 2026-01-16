@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome,
@@ -12,7 +12,7 @@ import {
   faSignOutAlt,
   IconDefinition
 } from '@fortawesome/free-solid-svg-icons';
-
+import { redirect } from 'next/navigation';
 interface MenuItem {
   title: string;
   icon: IconDefinition;
@@ -26,9 +26,18 @@ const menuItems: MenuItem[] = [
   { title: 'Slip Gaji', icon: faMoneyBillWave, href: '/pegawai/gaji' },
   { title: 'Izin/Cuti', icon: faFileAlt, href: '/pegawai/izin' },
 ];
-
 export default function PegawaiSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push("/login")
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-neutral-800 text-white flex flex-col">
@@ -45,11 +54,10 @@ export default function PegawaiSidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-neutral-700 text-white'
-                      : 'text-neutral-100 hover:bg-neutral-700 hover:text-white'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? 'bg-neutral-700 text-white'
+                    : 'text-neutral-100 hover:bg-neutral-700 hover:text-white'
+                    }`}
                 >
                   <FontAwesomeIcon icon={item.icon} className="text-base" />
                   <span className="font-medium">{item.title}</span>
@@ -61,7 +69,7 @@ export default function PegawaiSidebar() {
       </nav>
 
       <div className="p-4 border-t border-neutral-700">
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-blue-100 hover:bg-blue-500 rounded-lg transition-colors">
+        <button className="w-full flex items-center gap-3 px-4 py-3 text-blue-100 hover:bg-blue-500 rounded-lg transition-colors" onClick={logout}>
           <FontAwesomeIcon icon={faSignOutAlt} className="text-base" />
           <span className="font-medium">Logout</span>
         </button>

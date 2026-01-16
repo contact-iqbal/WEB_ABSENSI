@@ -2,8 +2,26 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faUser } from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect } from 'react';
 
 export default function Header() {
+  const [authResult, setAuthResult] = useState<any>(null);
+    useEffect(() => {
+      checkAuth();
+    }, []);
+  
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/session');
+        const result = await response.json();
+  
+        if (result.success) {
+          setAuthResult(result);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+    };
   return (
     <header className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
       <div className="flex items-center gap-4">
@@ -18,7 +36,7 @@ export default function Header() {
 
         <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
           <FontAwesomeIcon icon={faUser} className="text-base" />
-          <span className="text-sm font-medium">Admin</span>
+          <span className="text-sm font-medium">{authResult && (authResult.username)}</span>
         </button>
       </div>
     </header>

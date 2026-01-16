@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartLine,
@@ -11,9 +11,10 @@ import {
   faChartBar,
   faCog,
   faUser,
-  IconDefinition
+  IconDefinition,
+  faSignOutAlt
 } from '@fortawesome/free-solid-svg-icons';
-
+import { useState, useEffect } from 'react';
 interface MenuItem {
   title: string;
   icon: IconDefinition;
@@ -29,9 +30,34 @@ const menuItems: MenuItem[] = [
   { title: 'Laporan', icon: faChartBar, href: '/dashboard/laporan' },
   { title: 'Pengaturan', icon: faCog, href: '/dashboard/pengaturan' },
 ];
-
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push("/login")
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  const [authResult, setAuthResult] = useState<any>(null);
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const result = await response.json();
+
+      if (result.success) {
+        setAuthResult(result);
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+    }
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-neutral-800 text-white flex flex-col">
@@ -48,11 +74,10 @@ export default function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-neutral-700 text-white'
-                      : 'text-gray-300 hover:bg-neutral-700'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? 'bg-neutral-700 text-white'
+                    : 'text-gray-300 hover:bg-neutral-700'
+                    }`}
                 >
                   <FontAwesomeIcon icon={item.icon} className="text-base" />
                   <span className="font-medium">{item.title}</span>
@@ -74,9 +99,12 @@ export default function Sidebar() {
             <FontAwesomeIcon icon={faUser} className="text-base" />
           </div>
           <div className="flex-1">
-            <p className="text-sm font-medium">Administrator</p>
+            <p className="text-sm font-medium">{authResult && (authResult.username)}</p>
             <p className="text-xs text-gray-400">Online</p>
           </div>
+          <button onClick={logout} className='cursor-pointer'>
+            <FontAwesomeIcon icon={faSignOutAlt} />
+          </button>
         </div>
       </div>
     </aside>

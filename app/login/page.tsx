@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { redirect, useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock, faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 import { showError, showSuccess } from '@/lib/sweetalert';
@@ -10,10 +10,36 @@ export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     username: '',
-    password: ''
+    password: '',
+    rememberme: false,
+    debug: false
   });
   const [loading, setLoading] = useState(false);
+  const [authResult, setAuthResult] = useState<any>(null);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const result = await response.json();
+
+      if (result.success) {
+        if (result.accountAccess == "admin") {
+          router.push('/dashboard');
+        } else {
+          router.push('/pegawai');
+        }
+        setAuthResult(result);
+      } else {
+        router.push('/login');
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/login');
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,11 +50,42 @@ export default function LoginPage() {
       return;
     }
 
-    setTimeout(async () => {
-      await showSuccess('Berhasil Login!', 'Selamat datang di Sistem Absensi');
-      setLoading(false);
-      router.push('/dashboard');
-    }, 1000);
+    // setTimeout(async () => {
+    //   await showSuccess('Berhasil Login!', 'Selamat datang di Sistem Absensi');
+    //   setLoading(false);
+    //   router.push('/dashboard');
+    // }, 1000);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+      const result = await response.json()
+      if (result.success) {
+        if (result.message) {
+          await showSuccess('Akun dibuat!', `${result.message}`);
+          setLoading(false);
+        } else {
+          if (result.user.type == "admin") {
+            await showSuccess('Berhasil Login!', `Selamat datang di Sistem Absensi ${result.user.username}!`);
+            setLoading(false);
+            router.push('/dashboard');
+          } else {
+            await showSuccess('Berhasil Login!', `Selamat datang di Sistem Absensi ${result.user.username}!`);
+            setLoading(false);
+            router.push('/pegawai');
+          }
+        }
+      } else {
+        setLoading(false);
+        await showError('Uh oh', `${result.error}`)
+      }
+    } catch (error) {
+      console.log(error)
+    }
   };
 
   return (
@@ -58,7 +115,7 @@ export default function LoginPage() {
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="Masukkan username"
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-3 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -76,7 +133,7 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="Masukkan password"
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
+                    className="w-full pl-12 pr-4 py-3 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-800 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -86,6 +143,7 @@ export default function LoginPage() {
                   <input
                     type="checkbox"
                     className="w-4 h-4 text-neutral-800 border-gray-300 rounded focus:ring-neutral-800"
+                    onChange={(e) => setFormData({ ...formData, rememberme: e.target.checked })}
                   />
                   <span className="ml-2 text-sm text-gray-700">Ingat Saya</span>
                 </label>
@@ -93,15 +151,22 @@ export default function LoginPage() {
                   Lupa Password?
                 </a>
               </div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-neutral-800 border-gray-300 rounded focus:ring-neutral-800"
+                  onChange={(e) => setFormData({ ...formData, debug: e.target.checked })}
+                />
+                <span className="ml-2 text-sm text-gray-700">DEBUG: buat akun</span>
+              </label>
 
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${
-                  loading
-                    ? 'bg-neutral-500 cursor-not-allowed'
-                    : 'bg-neutral-800 hover:bg-neutral-900 shadow-lg hover:shadow-xl'
-                }`}
+                className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all flex items-center justify-center gap-2 ${loading
+                  ? 'bg-neutral-500 cursor-not-allowed'
+                  : 'bg-neutral-800 hover:bg-neutral-900 shadow-lg hover:shadow-xl'
+                  }`}
               >
                 {loading ? (
                   <>
