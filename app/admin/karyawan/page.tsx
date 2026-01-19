@@ -82,7 +82,7 @@ export default function KaryawanPage() {
         });
       }
     }).then(() => {
-      //window.location.reload();
+      window.location.reload();
     });
   }
   return (
