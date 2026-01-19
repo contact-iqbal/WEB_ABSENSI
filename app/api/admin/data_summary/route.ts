@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 export async function GET(request: NextRequest) {
     try {
         const [result]:any = await pool.execute(
-            'SELECT COUNT(*) AS total_karyawan FROM karyawan'
+            'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan = "karyawan"'
         )
         return NextResponse.json(
             {

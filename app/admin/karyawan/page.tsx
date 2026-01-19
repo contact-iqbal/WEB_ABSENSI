@@ -5,7 +5,7 @@ import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil } from '@fortawes
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
-import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
+import { showConfirm, showError, showSuccess } from '@/lib/sweetalert';
 
 interface karyawan {
   id: Number,
@@ -16,7 +16,6 @@ interface karyawan {
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
-  const [openDropdownId, setOpenDropdownId] = useState<Number | null>(null);
 
   const router = useRouter()
   useEffect(() => {

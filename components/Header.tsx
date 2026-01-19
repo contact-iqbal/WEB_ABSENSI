@@ -3,8 +3,16 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faUser } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+
+interface MenuItem {
+  title: string;
+  href: string;
+  badge?: string;
+}
 
 export default function Header() {
+  const pathname = usePathname();
   const [authResult, setAuthResult] = useState<any>(null);
     useEffect(() => {
       checkAuth();
@@ -22,11 +30,20 @@ export default function Header() {
         console.error('Auth check error:', error);
       }
     };
+
+    const menuItems: MenuItem[] = [
+      { title: 'Dashboard', href: '/admin' },
+      { title: 'Data Karyawan', href: '/admin/karyawan' },
+      { title: 'Absensi', href: '/admin/absensi' },
+      { title: 'Gaji', href: '/admin/gaji' },
+      { title: 'Laporan', href: '/admin/laporan' },
+      { title: 'Pengaturan', href: '/admin/pengaturan' },
+    ];
     
   return (
     <header className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
       <div className="flex items-center gap-4">
-        <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+        <h2 className="text-xl font-semibold text-gray-800"></h2>
       </div>
 
       <div className="flex items-center gap-4">

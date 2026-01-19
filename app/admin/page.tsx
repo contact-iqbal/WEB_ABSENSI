@@ -110,6 +110,14 @@ export default function DashboardPage() {
             Belum ada aktivitas
           </div>
         </div>
+        <div className="bg-white col-span-2 rounded-lg shadow-md p-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            Upload Spreadshseet to database
+          </h3>
+          <div className="text-center py-8 text-gray-500">
+            Coming soon
+          </div>
+        </div>
       </div>
     </div>
   );

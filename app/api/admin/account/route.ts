@@ -6,7 +6,7 @@ import { json } from "stream/consumers";
 export async function GET(request: NextRequest) {
     try {
         const [result] = await pool.execute(
-            'SELECT * FROM karyawan'
+            'SELECT * FROM karyawan WHERE jabatan = "karyawan"'
         )
         return NextResponse.json(
             {
@@ -52,12 +52,12 @@ export async function POST(request: NextRequest) {
         } else if (action == "delete") {
             if (!id) {
                 return NextResponse.json({
-                    error: 'id tidak ada!'
+                    error: 'Id tidak ada!'
                 }, { status: 400 })
             }
             if (id == 1) {
                 return NextResponse.json({
-                    error: 'id admin tidak dapat dihapus!'
+                    error: 'Akun admin tidak dapat dihapus!'
                 }, { status: 400 })
             }
             const [checkammount]: any = await pool.execute(
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
             )
             if (checkammount[0].total_karyawan == 1) {
                 return NextResponse.json({
-                    error: 'akun karyawan minimal ada 1!'
+                    error: 'Akun karyawan minimal ada 1!'
                 }, { status: 400 })
             }
             const [usernamecheck]:any = await pool.execute(

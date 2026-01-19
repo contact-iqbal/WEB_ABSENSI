@@ -31,6 +31,7 @@ const menuItems: MenuItem[] = [
   { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
   { title: 'Pengaturan', icon: faCog, href: '/admin/pengaturan' },
 ];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
