@@ -1,11 +1,11 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
-import { showConfirm, showError, showSuccess } from '@/lib/sweetalert';
+import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
 
 interface karyawan {
   id: Number,
@@ -14,10 +14,20 @@ interface karyawan {
   devisi: String,
   status: String,
 }
+interface edit {
+  id: Number,
+  editing: Boolean
+}
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
-
+  const [editing, Setediting] = useState<null | Number>(0);
   const router = useRouter()
+  const [pendingUpdate, SetpendingUpdate] = useState({
+    id: 0 as Number,
+    action: 'update',
+    type: '',
+    value: ''
+  })
   useEffect(() => {
     fetchkaryawan()
   }, [])
@@ -27,7 +37,6 @@ export default function KaryawanPage() {
 
     if (result.success) {
       SetKaryawan(result.result)
-      //console.log(result.result)
     }
   }
   const handlecreate = async () => {
@@ -116,6 +125,35 @@ export default function KaryawanPage() {
       console.log(e)
     }
   }
+  useEffect(() => {
+    if (editing == null && pendingUpdate.id != 0) {
+      handlechange(pendingUpdate.id, pendingUpdate.type, pendingUpdate.value)
+    } else {
+      fetchkaryawan()
+      SetpendingUpdate({ ...pendingUpdate, id: 0, type: '', value: '' })
+    }
+  }, [editing])
+  const handlechange = async (id: Number, type: String, value: String) => {
+    const updatestuff = await fetch('/api/admin/account', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: id,
+        action: 'update',
+        type: type,
+        value: value
+      })
+    });
+    const resultupdate = await updatestuff.json()
+    if (resultupdate.success) {
+      await showSuccess("Sukses", `${resultupdate.message}`)
+    } else if (!resultupdate.success == false && !resultupdate.error) {
+      await showInfo("Huh?", `${resultupdate.message || resultupdate.error}`)
+    }
+    fetchkaryawan()
+  }
 
   return (
     <div className="space-y-6">
@@ -157,25 +195,25 @@ export default function KaryawanPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[10px]">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   Nama
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   Jabatan
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   Departemen
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Aksi
                 </th>
               </tr>
@@ -186,7 +224,11 @@ export default function KaryawanPage() {
                   <td className="px-6 py-4">
                     <p className="font-medium text-gray-800">{k.id.toString()}</p>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{k.nama}</td>
+                  {editing == k.id ?
+                    <td className='p-2'><input type="text" value={String(pendingUpdate.id === k.id ? pendingUpdate.value : k.nama)} readOnly={false} className='w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg' onChange={(e) => (SetpendingUpdate({ ...pendingUpdate, id: k.id, type: "nama", value: e.target.value }))} /></td>
+                    :
+                    <td className="px-6 py-4 text-gray-600">{k.nama}</td>
+                  }
                   <td className="px-6 py-4 text-gray-600">{k.jabatan}</td>
                   <td className="px-6 py-4 text-gray-600">{k.devisi == 'default' ? '-' : k.devisi}</td>
                   <td className="px-6 py-4">
@@ -196,13 +238,23 @@ export default function KaryawanPage() {
                       </span>
                     }
                   </td>
-                  <td className="flex px-6 py-4 gap-1">
+                  <td className="flex px-6 py-4 justify-end gap-1">
                     {k.id !== 1 && (
-                      <><button className='bg-blue-500 p-1.5 hover:bg-blue-600 hover:scale-105 rounded-lg transition'>
-                        <FontAwesomeIcon icon={faPencil} />
-                      </button><button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition' onClick={() => (handledelete(k.id))}>
+                      <>
+                        <button className='bg-blue-500 p-1.5 hover:bg-blue-600 hover:scale-105 rounded-lg transition cursor-pointer'
+                          onClick={() => (Setediting(editing ? null : k.id))}
+                        >
+                          {editing == k.id ?
+                            <div className='flex flex-row justify-center items-center w-fit gap-2'><p>Apply</p><FontAwesomeIcon icon={faSave} /></div>
+                            :
+                            <FontAwesomeIcon icon={faPencil} />
+                          }
+
+                        </button>
+                        <button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
                           <FontAwesomeIcon icon={faTrash} />
-                        </button></>
+                        </button>
+                      </>
                     )}
                   </td>
                 </tr>

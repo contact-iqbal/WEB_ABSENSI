@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
     try {
-        const { username, password, id, action } = await request.json();
+        const { username, password, id, action, type, value } = await request.json();
         if (action == 'create') {
             console.log("create account")
             if (!username || !password) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
                     error: 'Akun karyawan minimal ada 1!'
                 }, { status: 400 })
             }
-            const [usernamecheck]:any = await pool.execute(
+            const [usernamecheck]: any = await pool.execute(
                 'SELECT nama FROM karyawan WHERE id = ?',
                 [id]
             )
@@ -79,6 +79,21 @@ export async function POST(request: NextRequest) {
                 success: true,
                 message: `Akun dengan Nama "${usernamecheck[0].nama}" dan id:${id} telah dihapus!`,
             });
+        } else if (action == "update") {
+            if (!id && type == '' && value == '') {
+                return NextResponse.json({
+                    success: false,
+                    error: 'Update dibatalkan'
+                }, { status: 400 })
+            }
+            await pool.execute(
+                `UPDATE karyawan SET ${type} = '${value}' WHERE id = ?`,
+                [id]
+            )
+            return NextResponse.json({
+                success: true,
+                message: 'Berhasil Mengupdate!'
+            })
         }
     } catch (error) {
         console.error('Login error:', error);
