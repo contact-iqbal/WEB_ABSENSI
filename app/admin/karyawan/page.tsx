@@ -14,10 +14,6 @@ interface karyawan {
   devisi: String,
   status: String,
 }
-interface edit {
-  id: Number,
-  editing: Boolean
-}
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
   const [editing, Setediting] = useState<null | Number>(0);
@@ -198,7 +194,7 @@ export default function KaryawanPage() {
           <table className="w-full table-fixed">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-[10px]">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2.5">
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
