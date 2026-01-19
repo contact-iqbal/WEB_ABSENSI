@@ -1,0 +1,128 @@
+'use client';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileImport, faPlus, faCheck, faClock, faTimes } from '@fortawesome/free-solid-svg-icons';
+
+export default function AbsensiPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Data Absensi</h1>
+          <p className="text-gray-600 mt-1">Kelola absensi karyawan</p>
+        </div>
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+            <FontAwesomeIcon icon={faFileImport} />
+            Import Excel
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+            <FontAwesomeIcon icon={faPlus} />
+            Catat Absensi
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center text-green-600">
+              <FontAwesomeIcon icon={faCheck} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Hadir</p>
+              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center text-yellow-600">
+              <FontAwesomeIcon icon={faClock} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Terlambat</p>
+              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center text-red-600">
+              <FontAwesomeIcon icon={faTimes} className="text-xl" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Tidak Hadir</p>
+              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Cari karyawan..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <input
+              type="date"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option>Semua Status</option>
+              <option>Hadir</option>
+              <option>Terlambat</option>
+              <option>Izin</option>
+              <option>Sakit</option>
+              <option>Alpha</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Tanggal
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Nama Karyawan
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Jam Masuk
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Jam Keluar
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Keterangan
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Aksi
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              <tr>
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  Belum ada data absensi. Silakan catat absensi atau import dari Excel.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
