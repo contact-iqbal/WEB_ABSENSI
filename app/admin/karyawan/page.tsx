@@ -1,10 +1,11 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
+import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
 
 interface karyawan {
   id: Number,
@@ -15,6 +16,8 @@ interface karyawan {
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
+  const [openDropdownId, setOpenDropdownId] = useState<Number | null>(null);
+
   const router = useRouter()
   useEffect(() => {
     fetchkaryawan()
@@ -51,7 +54,8 @@ export default function KaryawanPage() {
             },
             body: JSON.stringify({
               username: usernameValue,
-              password: passwordValue
+              password: passwordValue,
+              action: 'create'
             })
           })
           if (!response.ok) {
@@ -59,7 +63,7 @@ export default function KaryawanPage() {
             // console.log(JSON.stringify(data.error))
             return Swal.showValidationMessage(`
             ${(data.error).replace(/"/g, '')}`
-          );
+            );
           }
           return response.json();
         } catch (error) {
@@ -72,19 +76,48 @@ export default function KaryawanPage() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         await Swal.fire({
+          icon: 'success',
           title: `Sukses!`,
           text: result.value.message
         });
+        fetchkaryawan()
       } else if (!result.isDismissed && !result.isDenied) {
         await Swal.fire({
+          icon: 'error',
           title: `Uh oh`,
           text: result.value?.error
         });
       }
-    }).then(() => {
-      window.location.reload();
-    });
+    })
   }
+
+  const handledelete = async (i: Number) => {
+    try {
+      const sweetalertconfirm = (await showConfirm("Confimation", "Apakah anda yakin ingin hapus akun ini?")).isConfirmed;
+      if (sweetalertconfirm) {
+        const delacc = await fetch('/api/admin/account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: i,
+            action: 'delete'
+          })
+        });
+        const resultdel = await delacc.json()
+        if (resultdel.success) {
+          await showSuccess('Sukses!', resultdel.message)
+          fetchkaryawan()
+        } else {
+          await showError('Gagal!', resultdel.error || resultdel.message)
+        }
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -149,7 +182,7 @@ export default function KaryawanPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {Karyawan.map((k, i) => (
+              {Karyawan.map((k) => (
                 <tr key={k.id as number} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <p className="font-medium text-gray-800">{k.id.toString()}</p>
@@ -164,10 +197,14 @@ export default function KaryawanPage() {
                       </span>
                     }
                   </td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:text-blue-800 font-medium">
-                      Detail
-                    </button>
+                  <td className="flex px-6 py-4 gap-1">
+                    {k.id !== 1 && (
+                      <><button className='bg-blue-500 p-1.5 hover:bg-blue-600 hover:scale-105 rounded-lg transition'>
+                        <FontAwesomeIcon icon={faPencil} />
+                      </button><button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition' onClick={() => (handledelete(k.id))}>
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button></>
+                    )}
                   </td>
                 </tr>
               ))

@@ -85,7 +85,7 @@ export default function PegawaiDashboard() {
         <p className="text-gray-600 mt-1">{currentDate}</p>
       </div>
 
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-800 rounded-full mb-4">
