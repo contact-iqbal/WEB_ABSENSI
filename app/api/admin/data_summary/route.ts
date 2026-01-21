@@ -3,15 +3,16 @@ import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
     try {
-        const [result]:any = await pool.execute(
-            'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan = "karyawan"'
+        const [result]: any = await pool.execute(
+            'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "supervisor"'
         )
         return NextResponse.json(
             {
                 success: true,
-                result: [
-                    {karyawan: result[0].total_karyawan}
-                ]
+                result:{
+                    karyawan: result[0].total_karyawan,
+                    hello: ':3'
+                }
             },
             { status: 200 }
         )

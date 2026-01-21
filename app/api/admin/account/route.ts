@@ -6,7 +6,7 @@ import { json } from "stream/consumers";
 export async function GET(request: NextRequest) {
     try {
         const [result] = await pool.execute(
-            'SELECT * FROM karyawan WHERE jabatan = "karyawan"'
+            'SELECT * FROM users WHERE type != "admin"'
         )
         return NextResponse.json(
             {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
     try {
-        const { username, password, id, action, type, value } = await request.json();
+        const { username, password, id, action } = await request.json();
         if (action == 'create') {
             console.log("create account")
             if (!username || !password) {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
                 }, { status: 400 })
             }
             const [checkammount]: any = await pool.execute(
-                'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan = "karyawan"'
+                'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "supervisor"'
             )
             if (checkammount[0].total_karyawan == 1) {
                 return NextResponse.json({
@@ -73,30 +73,39 @@ export async function POST(request: NextRequest) {
                 [id]
             )
             await pool.execute(
-                'DELETE FROM karyawan WHERE id = ?', [id]
+                'DELETE FROM users WHERE id = ?', [id]
             )
             return NextResponse.json({
                 success: true,
                 message: `Akun dengan Nama "${usernamecheck[0].nama}" dan id:${id} telah dihapus!`,
             });
         } else if (action == "update") {
-            if (!id && type == '' && value == '') {
+            if (!id && !username && !password) {
                 return NextResponse.json({
                     success: false,
                     error: 'Update dibatalkan'
                 }, { status: 400 })
             }
-            await pool.execute(
-                `UPDATE karyawan SET ${type} = '${value}' WHERE id = ?`,
-                [id]
-            )
+            if (id && username) {
+                await pool.execute(
+                    `UPDATE users SET username = ? WHERE id = ?`,
+                    [username, id]
+                )
+            }
+            if (id && password) {
+                const hashed = await hashPassword(password)
+                await pool.execute(
+                    `UPDATE users SET password = ? WHERE id = ?`,
+                    [hashed, id]
+                )
+            }
             return NextResponse.json({
                 success: true,
                 message: 'Berhasil Mengupdate!'
             })
         }
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('error:', error);
         return NextResponse.json(
             { error: 'Terjadi kesalahan server' },
             { status: 500 }

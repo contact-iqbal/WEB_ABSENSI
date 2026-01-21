@@ -14,7 +14,7 @@ export default function DashboardPage() {
     try {
       const rows = await fetch('/api/admin/data_summary')
       const result = await rows.json();
-      SetData(result.result[0]);
+      SetData(result.result);
     } catch (e) {
       console.log(e)
     }

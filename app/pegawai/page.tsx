@@ -44,6 +44,7 @@ export default function PegawaiDashboard() {
 
     if (!jamMasuk) {
       setJamMasuk(time);
+      console.log(time)
       await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
     } else if (!jamKeluar) {
       setJamKeluar(time);
@@ -77,6 +78,18 @@ export default function PegawaiDashboard() {
   };
 
   const buttonStatus = getStatusButton();
+  const toMinutes = (time: string) => {
+    const [h, m] = time.split('.').map(Number)
+    return h * 60 + m
+  }
+  const getTimeColor = (time?: string) => {
+    if (!time) return 'text-gray-300'
+
+    return toMinutes(time) > 8 * 60
+      ? 'text-red-500'
+      : 'text-gray-800'
+  }
+
 
   return (
     <div className="space-y-6">
@@ -106,7 +119,7 @@ export default function PegawaiDashboard() {
                   className={`text-lg ${jamMasuk ? 'text-gray-800' : 'text-gray-300'}`}
                 />
               </div>
-              <div className={`text-3xl font-bold ${jamMasuk ? 'text-gray-800' : 'text-gray-300'}`}>
+              <div className={`text-3xl font-bold ${getTimeColor(String(jamMasuk))}`}>
                 {jamMasuk || '--:--'}
               </div>
             </div>

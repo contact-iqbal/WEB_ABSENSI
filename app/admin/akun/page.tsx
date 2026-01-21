@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL, faWarning } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
@@ -9,8 +9,8 @@ import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert'
 
 interface karyawan {
   id: Number,
-  nama: String,
-  jabatan: String,
+  username: String,
+  password: String,
   devisi: String,
   status: String,
 }
@@ -20,21 +20,20 @@ interface pendingUpdate {
   value?: pendingUpdateValue
 }
 interface pendingUpdateValue {
-  nama?: String,
-  jabatan?: String,
-  devisi?: String
+  username?: String,
+  password?: String,
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
   const [editing, Setediting] = useState<null | Number>(0);
+  const router = useRouter()
   let [pendingUpdate, SetpendingUpdate] = useState<pendingUpdate>({
     id: 0,
     action: 'update',
     value: (
       {
-        nama: '',
-        jabatan: '',
-        devisi: ''
+        username: '',
+        password: ''
       }
     )
   })
@@ -42,18 +41,104 @@ export default function KaryawanPage() {
     fetchkaryawan()
   }, [])
   const fetchkaryawan = async () => {
-    const responses = await fetch('/api/admin/karyawan')
+    const responses = await fetch('/api/admin/account')
     const result = await responses.json();
 
     if (result.success) {
       SetKaryawan(result.result)
     }
   }
+  const handlecreate = async () => {
+    Swal.fire({
+      title: "Buat akun",
+      html: `
+        <input id="username" class="swal2-input" placeholder="Username">
+        <input id="password" class="swal2-input" placeholder="Password">
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Buat Akun",
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        const usernameInput = (document.getElementById('username') as HTMLInputElement);
+        const passwordInput = (document.getElementById('password') as HTMLInputElement);
+        const usernameValue = usernameInput.value;
+        const passwordValue = passwordInput.value;
+        try {
+          const response = await fetch('/api/admin/account', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: usernameValue,
+              password: passwordValue,
+              action: 'create'
+            })
+          })
+          if (!response.ok) {
+            const data = await response.json();
+            // console.log(JSON.stringify(data.error))
+            return Swal.showValidationMessage(`
+            ${(data.error).replace(/"/g, '')}`
+            );
+          }
+          return response.json();
+        } catch (error) {
+          Swal.showValidationMessage(`
+            Request failed: ${error}
+          `);
+        }
+      },
+      allowOutsideClick: () => !Swal.isLoading()
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        await Swal.fire({
+          icon: 'success',
+          title: `Sukses!`,
+          text: result.value.message
+        });
+        fetchkaryawan()
+      } else if (!result.isDismissed && !result.isDenied) {
+        await Swal.fire({
+          icon: 'error',
+          title: `Uh oh`,
+          text: result.value?.error
+        });
+      }
+    })
+  }
+
+  const handledelete = async (i: Number) => {
+    try {
+      const sweetalertconfirm = (await showConfirm("Confimation", "Apakah anda yakin ingin hapus akun ini?")).isConfirmed;
+      if (sweetalertconfirm) {
+        const delacc = await fetch('/api/admin/account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: i,
+            action: 'delete'
+          })
+        });
+        const resultdel = await delacc.json()
+        if (resultdel.success) {
+          await showSuccess('Sukses!', resultdel.message)
+          fetchkaryawan()
+        } else {
+          await showError('Gagal!', resultdel.error || resultdel.message)
+        }
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const handleEditSave = (k: any) => {
     if (editing === k.id) {
       // SAVE
-      if (k.nama != pendingUpdate.value?.nama || k.jabatan != pendingUpdate.value?.jabatan || k.devisi != pendingUpdate.value?.devisi) {
+      if (k.username != pendingUpdate.value?.username || k.password != pendingUpdate.value?.password) {
         handlechange(k.id, pendingUpdate.value)
       }
       Setediting(null)
@@ -62,9 +147,8 @@ export default function KaryawanPage() {
         id: 0,
         action: 'update',
         value: {
-          nama: '',
-          jabatan: '',
-          devisi: '',
+          username: '',
+          password: ''
         },
       })
     } else {
@@ -75,9 +159,8 @@ export default function KaryawanPage() {
         id: k.id,
         action: 'update',
         value: {
-          nama: k.nama,
-          jabatan: k.jabatan,
-          devisi: k.devisi,
+          username: k.username,
+          password: k.password,
         },
       })
     }
@@ -85,7 +168,7 @@ export default function KaryawanPage() {
 
 
   const handlechange = async (id: Number, value: any) => {
-    const updatestuff = await fetch('/api/admin/karyawan', {
+    const updatestuff = await fetch('/api/admin/account', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -93,7 +176,8 @@ export default function KaryawanPage() {
       body: JSON.stringify({
         id: id,
         action: 'update',
-        value: value
+        username: value.username,
+        password: value.password
       })
     });
     const resultupdate = await updatestuff.json()
@@ -109,8 +193,18 @@ export default function KaryawanPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Data Karyawan</h1>
-          <p className="text-gray-600 mt-1">Kelola data karyawan perusahaan</p>
+          <h1 className="text-2xl font-bold text-gray-800">Data Akun Karyawan</h1>
+          <p className="text-gray-600 mt-1">Kelola akun karyawan perusahaan</p>
+        </div>
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+            <FontAwesomeIcon icon={faFileImport} />
+            Import Excel
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" onClick={handlecreate}>
+            <FontAwesomeIcon icon={faPlus} />
+            Tambah Karyawan
+          </button>
         </div>
       </div>
 
@@ -142,16 +236,10 @@ export default function KaryawanPage() {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Nama
+                  Username
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Jabatan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Departemen
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Status
+                  password
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Aksi
@@ -167,51 +255,39 @@ export default function KaryawanPage() {
                   {editing == k.id ?
                     <td className='p-2'>
                       <input type="text" className='w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg'
-                        value={String(pendingUpdate.value?.nama ?? '')}
+                        value={String(pendingUpdate.value?.username ?? '')}
                         onChange={(e) =>
                           SetpendingUpdate(prev => ({
                             ...prev,
                             value: {
                               ...(prev.value ?? {}),
-                              nama: e.target.value,
+                              username: e.target.value,
                             },
                           }))
                         }
                       />
                     </td>
                     :
-                    <td className="px-6 py-4 text-gray-600">{k.nama}</td>
+                    <td className="px-6 py-4 text-gray-600">{k.username}</td>
                   }
                   {editing == k.id ?
-                    <td className="p-2 text-gray-600">
-                      <select name="jabatan" id="jabatan" className='w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg'
-                        value={String(pendingUpdate.value?.jabatan ?? '')}
-
+                    <td className="p-2 text-gray-600 truncate">
+                      <input type="text" className='w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg'
+                        placeholder={String(pendingUpdate.value?.password ?? '')}
                         onChange={(e) =>
                           SetpendingUpdate(prev => ({
                             ...prev,
                             value: {
                               ...(prev.value ?? {}),
-                              jabatan: e.target.value,
+                              password: e.target.value,
                             },
                           }))
                         }
-                      >
-                        <option value="karyawan">Karyawan</option>
-                        <option value="bendahara">Bendahara</option>
-                      </select>
+                      />
                     </td>
                     :
-                    <td className="px-6 py-4 text-gray-600">{k.jabatan}</td>
+                    <td className="px-6 py-4 text-gray-600 truncate">{k.password}</td>
                   }
-                  <td className="px-6 py-4 text-gray-600">{k.devisi == 'default' ? '-' : k.devisi}</td>
-                  <td className="px-6 py-4">
-                    {k.status != 'default' &&
-                      <span className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}>
-                        {k.status}
-                      </span>
-                    }
-                  </td>
                   <td className="flex px-6 py-4 justify-end gap-1">
                     {k.id !== 1 && (
                       <>
@@ -225,9 +301,9 @@ export default function KaryawanPage() {
                           }
 
                         </button>
-                        {/* <button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
+                        <button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
                           <FontAwesomeIcon icon={faTrash} />
-                        </button> */}
+                        </button>
                       </>
                     )}
                   </td>
@@ -245,6 +321,7 @@ export default function KaryawanPage() {
           </table>
         </div>
       </div >
+      <p className='text-neutral-500 w-full pl-3'><FontAwesomeIcon icon={faWarning}/> jika lupa password, password tidak bisa dibaca dan hanya bisa di ganti!</p>
     </div >
   );
 }

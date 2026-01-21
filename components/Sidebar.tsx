@@ -26,6 +26,7 @@ import { showConfirm } from '@/lib/sweetalert';
 const menuItems: MenuItem[] = [
   { title: 'Dashboard', icon: faChartLine, href: '/admin' },
   { title: 'Data Karyawan', icon: faUsers, href: '/admin/karyawan' },
+  { title: 'Akun Karyawan', icon: faUser, href: '/admin/akun' },
   { title: 'Absensi', icon: faCalendarCheck, href: '/admin/absensi' },
   { title: 'Gaji', icon: faMoneyBillWave, href: '/admin/gaji' },
   { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
