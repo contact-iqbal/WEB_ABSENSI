@@ -42,7 +42,7 @@ export default function Sidebar() {
       if (sweetalertconfirm) {
         await fetch('/api/auth/logout', { method: 'POST' });
         router.push("/login")
-      } 
+      }
     } catch (e) {
       console.log(e)
     }
@@ -101,8 +101,12 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
-            <FontAwesomeIcon icon={faUser} className="text-base" />
+          <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
+            {authResult != null ?
+              <img src={authResult && (authResult.profile_pic)} alt="profile picture" />
+              :
+              <FontAwesomeIcon icon={faUser} className="text-base" />
+            }
           </div>
           <div className="flex-1">
             <p className="text-sm font-medium">{authResult && (authResult.username)}</p>

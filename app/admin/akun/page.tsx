@@ -219,7 +219,7 @@ export default function KaryawanPage() {
               />
             </div>
             <select className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>Semua Departemen</option>
+              <option>Semua</option>
               <option>IT</option>
               <option>HRD</option>
               <option>Finance</option>
@@ -321,7 +321,7 @@ export default function KaryawanPage() {
           </table>
         </div>
       </div >
-      <p className='text-neutral-500 w-full pl-3'><FontAwesomeIcon icon={faWarning}/> jika lupa password, password tidak bisa dibaca dan hanya bisa di ganti!</p>
+      <p className='text-neutral-500 w-full pl-3'><FontAwesomeIcon icon={faWarning}/> jika lupa password, password tidak bisa dibaca dan hanya bisa di ganti</p>
     </div >
   );
 }

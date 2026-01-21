@@ -148,7 +148,7 @@ export default function KaryawanPage() {
                   Jabatan
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Departemen
+                  Devisi
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   Status
@@ -202,7 +202,7 @@ export default function KaryawanPage() {
                       </select>
                     </td>
                     :
-                    <td className="px-6 py-4 text-gray-600">{k.jabatan}</td>
+                    <td className="px-6 py-4 text-gray-600 capitalize">{k.jabatan}</td>
                   }
                   <td className="px-6 py-4 text-gray-600">{k.devisi == 'default' ? '-' : k.devisi}</td>
                   <td className="px-6 py-4">

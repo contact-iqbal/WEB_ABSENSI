@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
                     { status: 400 }
                 );
             }
-            const hashedpass = await hashPassword(password) // lupa ganti value nya jir awalnya 120 walah nunggu setaon loh ya
+            const hashedpass = await hashPassword(password)
             const [accountinsert]: any = await pool.execute(
                 'INSERT INTO users (username, password) VALUES (?, ?)',
                 [username, hashedpass]

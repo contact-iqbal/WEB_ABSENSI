@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
                 success: true,
                 result:{
                     karyawan: result[0].total_karyawan,
-                    hello: ':3'
                 }
             },
             { status: 200 }
