@@ -70,7 +70,7 @@ export default function LoginPage() {
           setLoading(false);
           router.refresh();
         } else {
-          await showSuccess('Berhasil Login!', `Selamat datang di Sistem Absensi ${result.user.username}!`);
+          await showSuccess('Berhasil Login!', `Selamat datang di Sistem Absensi ${result.user.real_name}!`);
           if (result.user.type == "admin") {
             setLoading(false);
             router.push('/admin');

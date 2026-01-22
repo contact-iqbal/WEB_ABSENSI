@@ -1,17 +1,17 @@
 import pool from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
+    const {id} = await request.json()
     try {
-        const [result]: any = await pool.execute(
-            'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "superadmin"'
+        const [result] = await pool.execute(
+            'SELECT * FROM karyawan WHERE id = ?',
+            [id]
         )
         return NextResponse.json(
             {
                 success: true,
-                result:{
-                    karyawan: result[0].total_karyawan,
-                }
+                result: result
             },
             { status: 200 }
         )

@@ -18,14 +18,14 @@ export async function GET(req: NextRequest) {
     const decoded = jwt.verify(token, SECRET_KEY) as {
       id: any;
     };
-    const [type] = await pool.query<RowDataPacket[]>('SELECT type, picture FROM users WHERE id = ?', [decoded.id])
-    const [username]: any = await pool.execute('SELECT nama FROM karyawan WHERE id = ?', [decoded.id])
+    const [type] = await pool.query<RowDataPacket[]>('SELECT type FROM users WHERE id = ?', [decoded.id])
+    const [karyawan]: any = await pool.execute('SELECT nama, profile_picture FROM karyawan WHERE id = ?', [decoded.id])
     const restriction = type[0]
     return NextResponse.json({
       success: true,
       userId: decoded.id,
-      username: username[0].nama,
-      profile_pic: restriction.picture,
+      username: karyawan[0].nama,
+      profile_pic: karyawan[0].profile_picture,
       accountAccess: restriction.type
     });
   } catch (error: any) {

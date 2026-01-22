@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
                 }, { status: 400 })
             }
             const [checkammount]: any = await pool.execute(
-                'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "supervisor"'
+                'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "superadmin"'
             )
             if (checkammount[0].total_karyawan == 1) {
                 return NextResponse.json({

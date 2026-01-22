@@ -59,6 +59,9 @@ export default function Sidebar() {
 
       if (result.success) {
         setAuthResult(result);
+        if (result.accountAccess != 'admin') {
+          router.push('/pegawai');
+        }
       }
     } catch (error) {
       console.error('Auth check error:', error);
@@ -102,10 +105,8 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-700">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
-            {authResult != null ?
-              <img src={authResult && (authResult.profile_pic)} alt="profile picture" />
-              :
-              <FontAwesomeIcon icon={faUser} className="text-base" />
+            {authResult != null &&
+              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
             }
           </div>
           <div className="flex-1">

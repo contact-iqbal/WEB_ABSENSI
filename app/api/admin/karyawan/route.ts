@@ -6,7 +6,7 @@ import { json } from "stream/consumers";
 export async function GET(request: NextRequest) {
     try {
         const [result] = await pool.execute(
-            'SELECT * FROM karyawan WHERE jabatan != "supervisor"'
+            'SELECT * FROM karyawan WHERE jabatan != "superadmin"'
         )
         return NextResponse.json(
             {

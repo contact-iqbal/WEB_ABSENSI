@@ -53,8 +53,10 @@ export default function PegawaiHeader({ onMenuClick }: PegawaiHeaderProps) {
           className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
           onClick={() => routepush("/pegawai/profil")}
         >
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-            <FontAwesomeIcon icon={faUser} className="text-sm text-white" />
+          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center overflow-hidden">
+            {authResult != null &&
+              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
+            }
           </div>
           <span className="hidden sm:block text-sm font-medium">{authResult && (authResult.username)}</span>
         </button>

@@ -125,11 +125,9 @@ export default function KaryawanPage() {
               />
             </div>
             <select className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>Semua Departemen</option>
-              <option>IT</option>
-              <option>HRD</option>
-              <option>Finance</option>
-              <option>Marketing</option>
+              <option>Semua Devisi</option>
+              <option>DNA Jaya Group</option>
+              <option>Rizqi Tour</option>
             </select>
           </div>
         </div>
@@ -204,7 +202,29 @@ export default function KaryawanPage() {
                     :
                     <td className="px-6 py-4 text-gray-600 capitalize">{k.jabatan}</td>
                   }
-                  <td className="px-6 py-4 text-gray-600">{k.devisi == 'default' ? '-' : k.devisi}</td>
+                  {editing == k.id ?
+                    <td className="p-2 text-gray-600">
+                      <select name="devisi" id="devisi" className='w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg'
+                        value={String(pendingUpdate.value?.devisi ?? '')}
+
+                        onChange={(e) =>
+                          SetpendingUpdate(prev => ({
+                            ...prev,
+                            value: {
+                              ...(prev.value ?? {}),
+                              devisi: e.target.value,
+                            },
+                          }))
+                        }
+                      >
+                        <option value="default">-</option>
+                        <option value="DNA">DNA Jaya Group</option>
+                        <option value="RT">Rizqi Tour</option>
+                      </select>
+                    </td>
+                    :
+                    <td className="px-6 py-4 text-gray-600 capitalize">{k.devisi == 'default' ? '-' : (k.devisi == 'DNA' ? 'DNA Jaya Group' : (k.devisi == 'RT' ? 'Rizqi Tour' : ''))}</td>
+                  }
                   <td className="px-6 py-4">
                     {k.status != 'default' &&
                       <span className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}>

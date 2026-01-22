@@ -2,11 +2,107 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faBriefcase, faCalendar, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { useEffect, useState } from 'react';
+
+interface profilestructure {
+  id: Number,
+  NIK: Number,
+  nama: String,
+  acc_created: Date,
+  agama: String,
+  alamat: String,
+  devisi: String,
+  email: String,
+  gaji_pokok: Number,
+  jabatan: String,
+  jenis_kel: String,
+  no_telp: String,
+  profile_picture: any,
+  status: String,
+  tanggal_lahir: Date,
+  tempat_lahir: String
+}
 
 export default function ProfilPage() {
+  const [profiledata, Setprofiledata] = useState<profilestructure | null>(null)
+
+  function dateformat(date: any) {
+    return new Intl.DateTimeFormat('en-id', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    }).format(new Date(date));
+  }
+
+  const getdata = async () => {
+    const session = await fetch('/api/auth/session')
+    const sessionresult = await session.json()
+    const datas = await fetch('/api/karyawan/personal_data', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: sessionresult.userId,
+      })
+    }
+    )
+    const dataresult = await datas.json()
+
+    if (dataresult.success) {
+      Setprofiledata(dataresult.result[0])
+    }
+  }
+
+  function aliasesdevisi(alias: String) {
+    if (alias === "RT") {
+      return "Rizqi Tour"
+    } else if (alias === "DNA") {
+      return "DNA Jaya Group"
+    } else {
+      return ""
+    }
+  }
+  function aliasesstatus(alias: String) {
+    if (alias === "pegawai_tetap") {
+      return "Karyawan Tetap"
+    } else {
+      return ""
+    }
+  }
+
+  useEffect(() => {
+    getdata()
+  }, [])
+
+  function formatIndoPhone(input: String) {
+    if (!input) return "";
+
+    // Keep digits only
+    let digits = input.replace(/\D/g, "");
+
+    // Handle 08xxxx → 62xxxx
+    if (digits.startsWith("08")) {
+      digits = "62" + digits.slice(1);
+    }
+
+    // Handle 62xxxx
+    if (!digits.startsWith("62")) {
+      return "";
+    }
+
+    const local = digits.slice(2);
+
+    // Common Indonesian mobile grouping
+    const p1 = local.slice(0, 3);
+    const p2 = local.slice(3, 7);
+    const p3 = local.slice(7, 11);
+
+    if (!p1 || !p2 || !p3) return "";
+
+    return `+62-${p1}-${p2}-${p3}`;
+  }
   return (
     <div className="space-y-6">
-      <div>
+      <div className='pt-12'>
         <h1 className="text-2xl font-bold text-gray-800">Profil Saya</h1>
         <p className="text-gray-600 mt-1">Informasi data pribadi dan pekerjaan</p>
       </div>
@@ -15,12 +111,13 @@ export default function ProfilPage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="text-center">
-              <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white mb-4">
-                <FontAwesomeIcon icon={faUser} className="text-5xl" />
+              <div className="w-32 h-32 mx-auto bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white mb-4 overflow-hidden">
+                {profiledata != null &&
+                  (profiledata.profile_picture ? <img src={profiledata && (profiledata.profile_picture)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} size={"4x"} className="text-base" />)
+                }
               </div>
-
-              <h3 className="text-xl font-bold text-gray-800">Nama Pegawai</h3>
-              <p className="text-gray-600 mt-1">Staff IT</p>
+              <h3 className="text-xl font-bold text-gray-800">{profiledata ? profiledata.nama : ''}</h3>
+              <p className="text-gray-600 mt-1">{profiledata ? aliasesdevisi(profiledata.devisi) : ''}</p>
 
               <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
                 <div className="flex items-center gap-3 text-sm">
@@ -29,7 +126,7 @@ export default function ProfilPage() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-gray-500 text-xs">ID Pegawai</p>
-                    <p className="font-medium text-gray-800">PGW-001</p>
+                    <p className="font-medium text-gray-800">{profiledata ? String(profiledata.id) : ''}</p>
                   </div>
                 </div>
 
@@ -39,7 +136,7 @@ export default function ProfilPage() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-gray-500 text-xs">Tanggal Bergabung</p>
-                    <p className="font-medium text-gray-800">1 Januari 2024</p>
+                    <p className="font-medium text-gray-800">{profiledata ? dateformat(profiledata.acc_created) : ''}</p>
                   </div>
                 </div>
 
@@ -49,7 +146,7 @@ export default function ProfilPage() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="text-gray-500 text-xs">Status</p>
-                    <p className="font-medium text-gray-800">Pegawai Tetap</p>
+                    <p className="font-medium text-gray-800">{profiledata ? aliasesstatus(profiledata.status) : ''}</p>
                   </div>
                 </div>
               </div>
@@ -78,7 +175,7 @@ export default function ProfilPage() {
                   Nama Lengkap
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Nama Pegawai</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.nama : ''}</p>
                 </div>
               </div>
 
@@ -87,7 +184,7 @@ export default function ProfilPage() {
                   NIK
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">1234567890123456</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.NIK) : ''}</p>
                 </div>
               </div>
 
@@ -96,7 +193,7 @@ export default function ProfilPage() {
                   Tempat Lahir
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Jakarta</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.tempat_lahir : ''}</p>
                 </div>
               </div>
 
@@ -105,7 +202,7 @@ export default function ProfilPage() {
                   Tanggal Lahir
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">1 Januari 1990</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.tanggal_lahir) : ''}</p>
                 </div>
               </div>
 
@@ -114,7 +211,7 @@ export default function ProfilPage() {
                   Jenis Kelamin
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Laki-laki</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.jenis_kel : ''}</p>
                 </div>
               </div>
 
@@ -123,7 +220,7 @@ export default function ProfilPage() {
                   Agama
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Islam</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.agama : ''}</p>
                 </div>
               </div>
 
@@ -133,7 +230,7 @@ export default function ProfilPage() {
                   Alamat
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Jl. Contoh No. 123, Jakarta Selatan</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.alamat : ''}</p>
                 </div>
               </div>
             </div>
@@ -149,7 +246,7 @@ export default function ProfilPage() {
                   Email
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">pegawai@example.com</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.email : ''}</p>
                 </div>
               </div>
 
@@ -159,7 +256,7 @@ export default function ProfilPage() {
                   Nomor Telepon
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">0812-3456-7890</p>
+                  <p className="text-gray-800 font-medium">{formatIndoPhone(profiledata ? String(profiledata.no_telp) : '')}</p>
                 </div>
               </div>
             </div>
@@ -174,7 +271,7 @@ export default function ProfilPage() {
                   ID Pegawai
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">PGW-001</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.id) : ''}</p>
                 </div>
               </div>
 
@@ -183,7 +280,7 @@ export default function ProfilPage() {
                   Jabatan
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Staff IT</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.jabatan : ''}</p>
                 </div>
               </div>
 
@@ -192,7 +289,7 @@ export default function ProfilPage() {
                   Departemen
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">IT</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? aliasesdevisi(profiledata.devisi) : ''}</p>
                 </div>
               </div>
 
@@ -201,7 +298,7 @@ export default function ProfilPage() {
                   Status Kepegawaian
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Pegawai Tetap</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? aliasesstatus(profiledata.status) : ''}</p>
                 </div>
               </div>
 
@@ -210,7 +307,7 @@ export default function ProfilPage() {
                   Tanggal Bergabung
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">1 Januari 2024</p>
+                  <p className="text-gray-800 font-medium">{profiledata ? dateformat(profiledata.acc_created) : ''}</p>
                 </div>
               </div>
 

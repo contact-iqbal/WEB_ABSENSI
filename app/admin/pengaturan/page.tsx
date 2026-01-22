@@ -1,8 +1,18 @@
 'use client'
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+interface config {
+  nama_perusahaan: String,
+  alamat_perusahaan: any,
+  no_telp_perusahaan: any,
+  email_perusahaan: any,
+  jam_masuk: any,
+  jam_pulang: any,
+  toleransi_telat: any
+}
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
+  const [configdata, Setconfigdata] = useState<config | null>(null)
 
   const items = [
     {
@@ -15,9 +25,22 @@ export default function PengaturanPage() {
     },
     {
       id: 3,
-      section: 'Notifikasi'
+      section: 'Gaji & Tunjangan'
     },
   ]
+  useEffect(() => {
+    fetchconfig()
+  }, [])
+  
+  const fetchconfig = async () => {
+    const configdatas = await fetch('/api/admin/config')
+    const configresult = await configdatas.json()
+    
+    if (configresult.success) {
+      Setconfigdata(configresult.result[0])
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -31,8 +54,8 @@ export default function PengaturanPage() {
             <nav className="space-y-1">
               {items.map((itm) => (
                 <button key={itm.id} className={`w-full text-left px-4 py-3 ${section === itm.id ? 'bg-blue-50 text-blue-700 rounded-lg font-medium' : 'text-gray-700 hover:bg-gray-50 rounded-lg'}`} onClick={() => (Setsection(itm.id))}>
-                {itm.section}
-              </button>
+                  {itm.section}
+                </button>
               ))}
               {/* <button className="w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-lg font-medium" onClick={() => (Setsection(1))}>
                 Umum
@@ -71,7 +94,8 @@ export default function PengaturanPage() {
                   <input
                     type="text"
                     placeholder="Masukkan nama perusahaan"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    defaultValue={String(configdata?.nama_perusahaan ?? '')}
+                    className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -82,7 +106,8 @@ export default function PengaturanPage() {
                   <textarea
                     rows={3}
                     placeholder="Masukkan alamat perusahaan"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    defaultValue={String(configdata?.alamat_perusahaan ?? '')}
+                    className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -94,7 +119,8 @@ export default function PengaturanPage() {
                     <input
                       type="tel"
                       placeholder="Nomor telepon"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      defaultValue={String(configdata?.no_telp_perusahaan ?? '')}
+                      className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -105,7 +131,8 @@ export default function PengaturanPage() {
                     <input
                       type="email"
                       placeholder="Email perusahaan"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      defaultValue={String(configdata?.email_perusahaan ?? '')}
+                      className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -126,8 +153,8 @@ export default function PengaturanPage() {
                     </label>
                     <input
                       type="time"
-                      defaultValue="08:00"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      defaultValue={String(configdata?.jam_masuk ?? '')}
+                      className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
@@ -137,8 +164,8 @@ export default function PengaturanPage() {
                     </label>
                     <input
                       type="time"
-                      defaultValue="17:00"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      defaultValue={String(configdata?.jam_pulang ?? '')}
+                      className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -149,8 +176,8 @@ export default function PengaturanPage() {
                   </label>
                   <input
                     type="number"
-                    defaultValue="15"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    defaultValue={String(configdata?.toleransi_telat ?? '')}
+                    className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -158,7 +185,7 @@ export default function PengaturanPage() {
                   <input
                     type="checkbox"
                     id="weekend"
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 text-gray-700 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="weekend" className="text-sm text-gray-700">
                     Aktifkan absensi akhir pekan (Sabtu & Minggu)
@@ -182,7 +209,7 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -194,7 +221,7 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -206,7 +233,7 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
