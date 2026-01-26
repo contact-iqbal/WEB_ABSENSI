@@ -82,6 +82,13 @@ export default function KaryawanPage() {
       })
     }
   }
+  function aliasesstatus(alias: String) {
+    if (alias === "pegawai_tetap") {
+      return "Karyawan Tetap"
+    } else {
+      return ""
+    }
+  }
 
 
   const handlechange = async (id: Number, value: any) => {
@@ -228,7 +235,7 @@ export default function KaryawanPage() {
                   <td className="px-6 py-4">
                     {k.status != 'default' &&
                       <span className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}>
-                        {k.status}
+                        {aliasesstatus(k.status)}
                       </span>
                     }
                   </td>

@@ -2,8 +2,30 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFileImport, faPlus, faCheck, faClock, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useEffect, useState } from 'react';
+import pool from '@/lib/db';
+
+interface absen {
+  id: number,
+  jam_masuk: string,
+  jam_keluar: string,
+  status: string,
+  tanggal: string
+}
 
 export default function AbsensiPage() {
+  const [absensi, setabsensi] = useState<absen[] | null>([])
+  useEffect(() => {
+    getabsensi()
+  }, [])
+  const getabsensi = async () => {
+    const absensirslt = await fetch('/api/admin/absensi')
+    const absensiresult = await absensirslt.json()
+    if (absensiresult.success) {
+      setabsensi(absensiresult.result)
+      console.log(absensiresult.result)
+    }
+  }
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

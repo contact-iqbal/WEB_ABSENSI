@@ -9,13 +9,58 @@ import {
   faArrowRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
-import { showSuccess } from '@/lib/sweetalert';
+import { showConfirm, showInfo, showSuccess } from '@/lib/sweetalert';
+
+interface session {
+  success: Boolean,
+  userId: Number,
+}
 
 export default function PegawaiDashboard() {
   const [jamMasuk, setJamMasuk] = useState<string | null>(null);
   const [jamKeluar, setJamKeluar] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
+  const [Sessions, setSession] = useState<session | null>(null)
+  useEffect(() => {
+    storesession()
+  }, [])
+  const storesession = async () => {
+    try {
+      const session = await fetch('/api/auth/session')
+      const sessionresult = await session.json()
+      if (sessionresult.success) {
+        setSession(sessionresult)
+        setabsen(sessionresult.userId)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  const setabsen = async (id: Number) => {
+    try {
+      const absendata = await fetch('/api/karyawan/absen', {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: id,
+          requests: 'fetch'
+        })
+      }
+
+      )
+      const absendatas = await absendata.json()
+      if (absendatas.success) {
+        setJamMasuk(absendatas.result[0].absen_masuk.substring(0, 5).replace(':', '.'))
+        setJamKeluar(absendatas.result[0].absen_keluar.substring(0, 5).replace(':', '.'))
+        console.log(absendatas.result)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   useEffect(() => {
     const updateTime = () => {
@@ -40,15 +85,47 @@ export default function PegawaiDashboard() {
 
   const handleAbsen = async () => {
     const now = new Date();
-    const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', });
 
     if (!jamMasuk) {
       setJamMasuk(time);
+      const inputtodb = await fetch('/api/karyawan/absen', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: Sessions?.userId,
+          absen_masuk: time,
+          status: 'hadir',
+          requests: 'jam_masuk'
+        })
+      }
+      )
+      const resultinputtodb = await inputtodb.json()
+      console.log(resultinputtodb)
       console.log(time)
       await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
     } else if (!jamKeluar) {
-      setJamKeluar(time);
-      await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
+      if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
+        setJamKeluar(time);
+        const inputtodbkl = await fetch('/api/karyawan/absen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: Sessions?.userId,
+            absen_keluar: time,
+            requests: 'jam_keluar'
+          })
+        }
+        )
+        const resultinputtodbkl = await inputtodbkl.json()
+        console.log(resultinputtodbkl)
+        console.log(time)
+        await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
+      }
     }
   };
 
@@ -82,10 +159,12 @@ export default function PegawaiDashboard() {
     const [h, m] = time.split('.').map(Number)
     return h * 60 + m
   }
-  const getTimeColor = (time?: string) => {
+  const getTimeColor = (time: string) => {
     if (!time) return 'text-gray-300'
+    if (time == 'null') return 'text-gray-300'
+    //console.log(time)
 
-    return toMinutes(time) > 8 * 60
+    return toMinutes(time) > toMinutes('08.15.00')
       ? 'text-red-500'
       : 'text-gray-800'
   }
@@ -93,7 +172,7 @@ export default function PegawaiDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className='pt-12'>
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Pegawai</h1>
         <p className="text-gray-600 mt-1">{currentDate}</p>
       </div>
@@ -101,9 +180,9 @@ export default function PegawaiDashboard() {
       <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-800 rounded-full mb-4">
+            {/* <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-800 rounded-full mb-4">
               <FontAwesomeIcon icon={faClock} className="text-3xl text-white" />
-            </div>
+            </div> */}
             <div className="text-5xl font-bold text-gray-800 mb-2 tabular-nums">
               {currentTime}
             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faBriefcase, faCalendar, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faBriefcase, faCalendar, faEdit, faL, faSave } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 
 interface profilestructure {
@@ -25,6 +25,7 @@ interface profilestructure {
 
 export default function ProfilPage() {
   const [profiledata, Setprofiledata] = useState<profilestructure | null>(null)
+  const [edit, Setedit] = useState(false)
 
   function dateformat(date: any) {
     return new Intl.DateTimeFormat('en-id', {
@@ -75,23 +76,15 @@ export default function ProfilPage() {
 
   function formatIndoPhone(input: String) {
     if (!input) return "";
-
-    // Keep digits only
     let digits = input.replace(/\D/g, "");
-
-    // Handle 08xxxx → 62xxxx
     if (digits.startsWith("08")) {
       digits = "62" + digits.slice(1);
     }
-
-    // Handle 62xxxx
     if (!digits.startsWith("62")) {
       return "";
     }
 
     const local = digits.slice(2);
-
-    // Common Indonesian mobile grouping
     const p1 = local.slice(0, 3);
     const p2 = local.slice(3, 7);
     const p3 = local.slice(7, 11);
@@ -99,6 +92,14 @@ export default function ProfilPage() {
     if (!p1 || !p2 || !p3) return "";
 
     return `+62-${p1}-${p2}-${p3}`;
+  }
+
+  function handleedit() {
+    if (edit) {
+      Setedit(false)
+    } else {
+      Setedit(true)
+    }
   }
   return (
     <div className="space-y-6">
@@ -163,9 +164,15 @@ export default function ProfilPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-800">Data Pribadi</h3>
-              <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors">
+              <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors" onClick={handleedit}>
+                {edit ? 
+                <><FontAwesomeIcon icon={faSave} className="mr-2" />
+                Simpan</>
+                :
+                <>
                 <FontAwesomeIcon icon={faEdit} className="mr-2" />
-                Edit
+                Edit</>
+              }
               </button>
             </div>
 
@@ -230,7 +237,11 @@ export default function ProfilPage() {
                   Alamat
                 </label>
                 <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.alamat : ''}</p>
+                  {edit ?
+                    <input type="text" defaultValue={profiledata ? String(profiledata.alamat) : ''} readOnly={false} className='text-neutral-800 border-2 outline-none w-full' />
+                    :
+                    <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.alamat) : ''}</p>
+                  }
                 </div>
               </div>
             </div>
