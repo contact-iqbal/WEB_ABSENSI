@@ -81,6 +81,89 @@ INSERT INTO `karyawan` (`id`, `nama`, `jabatan`, `devisi`, `status`, `profile_pi
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `absensi`
+--
+
+CREATE TABLE `absensi` (
+  `id` int NOT NULL,
+  `tanggal` date NOT NULL,
+  `absen_masuk` time DEFAULT NULL,
+  `absen_keluar` time DEFAULT NULL,
+  `status` enum('hadir','terlambat','izin','sakit','alpha') NOT NULL DEFAULT 'hadir',
+  `keterangan` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gaji`
+--
+
+CREATE TABLE `gaji` (
+  `id` int NOT NULL,
+  `karyawan_id` int NOT NULL,
+  `bulan` int NOT NULL,
+  `tahun` int NOT NULL,
+  `gaji_pokok` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `total_tunjangan` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `total_potongan` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `gaji_bersih` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `status_bayar` enum('belum_dibayar','sudah_dibayar') NOT NULL DEFAULT 'belum_dibayar',
+  `tanggal_bayar` date DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `izin`
+--
+
+CREATE TABLE `izin` (
+  `id` int NOT NULL,
+  `karyawan_id` int NOT NULL,
+  `jenis_izin` enum('izin','sakit','cuti') NOT NULL,
+  `tanggal_mulai` date NOT NULL,
+  `tanggal_selesai` date NOT NULL,
+  `keterangan` text,
+  `bukti` text,
+  `status` enum('pending','disetujui','ditolak') NOT NULL DEFAULT 'pending',
+  `approved_by` int DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `potongan_gaji`
+--
+
+CREATE TABLE `potongan_gaji` (
+  `id` int NOT NULL,
+  `gaji_id` int NOT NULL,
+  `jenis_potongan` varchar(100) NOT NULL,
+  `jumlah` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `keterangan` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tunjangan`
+--
+
+CREATE TABLE `tunjangan` (
+  `id` int NOT NULL,
+  `gaji_id` int NOT NULL,
+  `jenis_tunjangan` varchar(100) NOT NULL,
+  `jumlah` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `keterangan` text
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -105,10 +188,50 @@ INSERT INTO `users` (`id`, `username`, `password`, `type`) VALUES
 --
 
 --
+-- Indexes for table `absensi`
+--
+ALTER TABLE `absensi`
+  ADD PRIMARY KEY (`id`,`tanggal`),
+  ADD KEY `idx_tanggal` (`tanggal`),
+  ADD KEY `idx_status` (`status`);
+
+--
+-- Indexes for table `gaji`
+--
+ALTER TABLE `gaji`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `karyawan_id` (`karyawan_id`),
+  ADD KEY `idx_bulan_tahun` (`bulan`,`tahun`),
+  ADD KEY `idx_status_bayar` (`status_bayar`);
+
+--
+-- Indexes for table `izin`
+--
+ALTER TABLE `izin`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `karyawan_id` (`karyawan_id`),
+  ADD KEY `approved_by` (`approved_by`),
+  ADD KEY `idx_status` (`status`);
+
+--
 -- Indexes for table `karyawan`
 --
 ALTER TABLE `karyawan`
   ADD UNIQUE KEY `dupli` (`id`);
+
+--
+-- Indexes for table `potongan_gaji`
+--
+ALTER TABLE `potongan_gaji`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `gaji_id` (`gaji_id`);
+
+--
+-- Indexes for table `tunjangan`
+--
+ALTER TABLE `tunjangan`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `gaji_id` (`gaji_id`);
 
 --
 -- Indexes for table `users`
@@ -121,6 +244,30 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `gaji`
+--
+ALTER TABLE `gaji`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `izin`
+--
+ALTER TABLE `izin`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `potongan_gaji`
+--
+ALTER TABLE `potongan_gaji`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `tunjangan`
+--
+ALTER TABLE `tunjangan`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -129,6 +276,37 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `absensi`
+--
+ALTER TABLE `absensi`
+  ADD CONSTRAINT `absensi_karyawan` FOREIGN KEY (`id`) REFERENCES `karyawan` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `gaji`
+--
+ALTER TABLE `gaji`
+  ADD CONSTRAINT `gaji_karyawan` FOREIGN KEY (`karyawan_id`) REFERENCES `karyawan` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `izin`
+--
+ALTER TABLE `izin`
+  ADD CONSTRAINT `izin_karyawan` FOREIGN KEY (`karyawan_id`) REFERENCES `karyawan` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `izin_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
+-- Constraints for table `potongan_gaji`
+--
+ALTER TABLE `potongan_gaji`
+  ADD CONSTRAINT `potongan_gaji_gaji` FOREIGN KEY (`gaji_id`) REFERENCES `gaji` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tunjangan`
+--
+ALTER TABLE `tunjangan`
+  ADD CONSTRAINT `tunjangan_gaji` FOREIGN KEY (`gaji_id`) REFERENCES `gaji` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `karyawan`

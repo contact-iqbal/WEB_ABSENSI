@@ -1,31 +1,61 @@
-'use client';
+"use client";
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus, faCheck, faClock, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useEffect, useState } from 'react';
-import pool from '@/lib/db';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faFileImport,
+  faPlus,
+  faCheck,
+  faClock,
+  faTimes,
+} from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useState } from "react";
+import pool from "@/lib/db";
 
 interface absen {
-  id: number,
-  jam_masuk: string,
-  jam_keluar: string,
-  status: string,
-  tanggal: string
+  id: number;
+  nama: string;
+  jabatan: string;
+  tanggal: string;
+  absen_masuk: string;
+  absen_keluar: string;
+  status: string;
+  keterangan: string;
+}
+
+interface stats {
+  hadir: number;
+  terlambat: number;
+  tidak_hadir: number;
 }
 
 export default function AbsensiPage() {
-  const [absensi, setabsensi] = useState<absen[] | null>([])
+  const [absensi, setabsensi] = useState<absen[]>([]);
+  const [stats, setStats] = useState<stats>({
+    hadir: 0,
+    terlambat: 0,
+    tidak_hadir: 0,
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterStatus, setFilterStatus] = useState("Semua Status");
+
   useEffect(() => {
-    getabsensi()
-  }, [])
+    getabsensi();
+  }, [filterDate, filterStatus, searchTerm]);
+
   const getabsensi = async () => {
-    const absensirslt = await fetch('/api/admin/absensi')
-    const absensiresult = await absensirslt.json()
+    const params = new URLSearchParams();
+    if (filterDate) params.append("tanggal", filterDate);
+    if (filterStatus !== "Semua Status") params.append("status", filterStatus);
+    if (searchTerm) params.append("search", searchTerm);
+
+    const absensirslt = await fetch(`/api/admin/absensi?${params.toString()}`);
+    const absensiresult = await absensirslt.json();
     if (absensiresult.success) {
-      setabsensi(absensiresult.result)
-      console.log(absensiresult.result)
+      setabsensi(absensiresult.result);
+      setStats(absensiresult.stats);
     }
-  }
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -53,7 +83,9 @@ export default function AbsensiPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Hadir</p>
-              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {stats.hadir}
+              </h3>
             </div>
           </div>
         </div>
@@ -65,7 +97,9 @@ export default function AbsensiPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Terlambat</p>
-              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {stats.terlambat}
+              </h3>
             </div>
           </div>
         </div>
@@ -77,7 +111,9 @@ export default function AbsensiPage() {
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Tidak Hadir</p>
-              <h3 className="text-2xl font-bold text-gray-800">0</h3>
+              <h3 className="text-2xl font-bold text-gray-800">
+                {stats.tidak_hadir}
+              </h3>
             </div>
           </div>
         </div>
@@ -90,14 +126,22 @@ export default function AbsensiPage() {
               <input
                 type="text"
                 placeholder="Cari karyawan..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <input
               type="date"
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option>Semua Status</option>
               <option>Hadir</option>
               <option>Terlambat</option>
@@ -136,11 +180,65 @@ export default function AbsensiPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                  Belum ada data absensi. Silakan catat absensi atau import dari Excel.
-                </td>
-              </tr>
+              {absensi.length > 0 ? (
+                absensi.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-800">
+                      {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-gray-800">{item.nama}</p>
+                      <p className="text-sm text-gray-600">{item.jabatan}</p>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {item.absen_masuk
+                        ? item.absen_masuk.substring(0, 5)
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {item.absen_keluar
+                        ? item.absen_keluar.substring(0, 5)
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          item.status === "hadir"
+                            ? "bg-green-100 text-green-700"
+                            : item.status === "terlambat"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : item.status === "izin"
+                                ? "bg-blue-100 text-blue-700"
+                                : item.status === "sakit"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {item.status.charAt(0).toUpperCase() +
+                          item.status.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {item.keterangan || "-"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-gray-500"
+                  >
+                    Belum ada data absensi. Silakan catat absensi atau import
+                    dari Excel.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
