@@ -109,6 +109,12 @@ export async function POST(request: NextRequest) {
           id,
         ]);
       }
+      if (id && value.status) {
+        await pool.execute(`UPDATE karyawan SET status = ? WHERE id = ?`, [
+          value.status,
+          id,
+        ]);
+      }
       return NextResponse.json({
         success: true,
         message: "Berhasil Mengupdate!",

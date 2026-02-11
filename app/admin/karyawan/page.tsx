@@ -39,6 +39,7 @@ interface pendingUpdateValue {
   nama?: String;
   jabatan?: String;
   devisi?: String;
+  status?: String
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
@@ -60,6 +61,7 @@ export default function KaryawanPage() {
       nama: "",
       jabatan: "",
       devisi: "",
+      status: ""
     },
   });
   useEffect(() => {
@@ -123,7 +125,8 @@ export default function KaryawanPage() {
       if (
         k.nama != pendingUpdate.value?.nama ||
         k.jabatan != pendingUpdate.value?.jabatan ||
-        k.devisi != pendingUpdate.value?.devisi
+        k.devisi != pendingUpdate.value?.devisi ||
+        k.status != pendingUpdate.value?.status
       ) {
         handlechange(k.id, pendingUpdate.value);
       }
@@ -136,6 +139,7 @@ export default function KaryawanPage() {
           nama: "",
           jabatan: "",
           devisi: "",
+          status: ""
         },
       });
     } else {
@@ -149,6 +153,7 @@ export default function KaryawanPage() {
           nama: k.nama,
           jabatan: k.jabatan,
           devisi: k.devisi,
+          status: k.status,
         },
       });
     }
@@ -175,9 +180,9 @@ export default function KaryawanPage() {
     });
     const resultupdate = await updatestuff.json();
     if (resultupdate.success) {
-      await showSuccess("Sukses", `${resultupdate.message}`);
+      showSuccess("Sukses", `${resultupdate.message}`);
     } else if (!resultupdate.success == false && !resultupdate.error) {
-      await showInfo(
+      showInfo(
         "Huh?",
         `${resultupdate.message || resultupdate.error || resultupdate.toString()}`,
       );
@@ -202,136 +207,136 @@ export default function KaryawanPage() {
       </div>
 
       {/* Modal Add Employee */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
-              Tambah Karyawan Baru
-            </h2>
+      {/* {showModal && ( */}
+      <div className={`fixed inset-0 w-full h-full bg-black bg-black/50 flex items-center justify-center z-50 transition-all ${showModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-sm">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
+            Tambah Karyawan Baru
+          </h2>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={newEmployee.username}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, username: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Username untuk login"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={newEmployee.password}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, password: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Password"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nama Lengkap
-                </label>
-                <input
-                  type="text"
-                  value={newEmployee.nama}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, nama: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nama lengkap karyawan"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Jabatan
-                </label>
-                <select
-                  value={newEmployee.jabatan}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, jabatan: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="karyawan">Karyawan</option>
-                  <option value="bendahara">Bendahara</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Divisi
-                </label>
-                <select
-                  value={newEmployee.devisi}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, devisi: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="default">-</option>
-                  <option value="DNA">DNA Jaya Group</option>
-                  <option value="RT">Rizqi Tour</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <select
-                  value={newEmployee.status}
-                  onChange={(e) =>
-                    setNewEmployee({ ...newEmployee, status: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="default">-</option>
-                  <option value="pegawai_tetap">Pegawai Tetap</option>
-                </select>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <input
+                type="text"
+                value={newEmployee.username}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, username: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Username untuk login"
+              />
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setNewEmployee({
-                    username: "",
-                    password: "",
-                    nama: "",
-                    jabatan: "karyawan",
-                    devisi: "default",
-                    status: "default",
-                  });
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                value={newEmployee.password}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, password: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Password"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nama Lengkap
+              </label>
+              <input
+                type="text"
+                value={newEmployee.nama}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, nama: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Nama lengkap karyawan"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Jabatan
+              </label>
+              <select
+                value={newEmployee.jabatan}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, jabatan: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Batal
-              </button>
-              <button
-                onClick={handleAddEmployee}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                <option value="karyawan">Karyawan</option>
+                <option value="bendahara">Bendahara</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Divisi
+              </label>
+              <select
+                value={newEmployee.devisi}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, devisi: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Simpan
-              </button>
+                <option value="default">-</option>
+                <option value="DNA">DNA Jaya Group</option>
+                <option value="RT">Rizqi Tour</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                value={newEmployee.status}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, status: e.target.value })
+                }
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="default">-</option>
+                <option value="pegawai_tetap">Pegawai Tetap</option>
+              </select>
             </div>
           </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => {
+                setShowModal(false);
+                setNewEmployee({
+                  username: "",
+                  password: "",
+                  nama: "",
+                  jabatan: "karyawan",
+                  devisi: "default",
+                  status: "default",
+                });
+              }}
+              className="flex-1 px-4 py-2 bg-red-500 border border-gray-300 text-gray-700 rounded-lg hover:bg-red-600 transition-colors font-medium text-white"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleAddEmployee}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Simpan
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+      {/* )} */}
 
       <div className="bg-white rounded-lg shadow-md">
         <div className="p-6 border-b border-gray-200">
@@ -462,15 +467,45 @@ export default function KaryawanPage() {
                             : ""}
                     </td>
                   )}
-                  <td className="px-6 py-4">
-                    {k.status != "default" && (
-                      <span
-                        className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}
+                  {editing == k.id ? (
+                    <td className="p-2 text-gray-600">
+                      <select
+                        name="status"
+                        id="status"
+                        className="w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg"
+                        value={String(pendingUpdate.value?.status ?? "")}
+                        onChange={(e) =>
+                          SetpendingUpdate((prev) => ({
+                            ...prev,
+                            value: {
+                              ...(prev.value ?? {}),
+                              status: e.target.value,
+                            },
+                          }))
+                        }
                       >
-                        {aliasesstatus(k.status)}
-                      </span>
-                    )}
-                  </td>
+                        <option value="default">-</option>
+                        <option value="pegawai_tetap">Karyawan tetap</option>
+                      </select>
+                    </td>
+                  ) : (
+                    <td className="px-6 py-4">
+                      {k.status == "default" ? (
+                        <span
+                          className={`px-3 py-1 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-full`}
+                        >
+                          No Info
+                        </span>
+                      ) : (
+                        <span
+                          className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}
+                        >
+                          {aliasesstatus(k.status)}
+                        </span>
+                      )}
+                    </td>
+                  )}
+
                   <td className="flex px-6 py-4 justify-end gap-1">
                     {k.id !== 1 && (
                       <>

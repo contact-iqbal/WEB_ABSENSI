@@ -48,6 +48,16 @@ export async function GET(request: NextRequest) {
              ORDER BY waktu DESC
              LIMIT 5`,
     );
+    const [aktivitas_keluar]: any = await pool.execute(
+      `SELECT 'pulang' AS tipe, k.nama, TIMESTAMP(DATE(a.created_at), a.absen_keluar) AS waktu, 
+                    CONCAT('Melakukan ceklog pulang') AS aktivitas
+             FROM absensi a
+             JOIN karyawan k ON a.id = k.id
+             WHERE DATE(a.created_at) = CURDATE() AND a.absen_keluar IS NOT NULL
+             AND a.absen_keluar <> ''
+             ORDER BY waktu DESC
+             LIMIT 5`,
+    );
 
     return NextResponse.json(
       {
@@ -58,7 +68,7 @@ export async function GET(request: NextRequest) {
           tidak_hadir_hari_ini: tidakHadirHariIni,
           total_gaji_bulan_ini: parseFloat(gajiResult[0].total_gaji),
           absensi_terbaru: absensiTerbaru,
-          aktivitas_terkini: aktivitas,
+          aktivitas_terkini: [{absen:aktivitas, keluar:aktivitas_keluar}],
         },
       },
       { status: 200 },

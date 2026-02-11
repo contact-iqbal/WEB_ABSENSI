@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
             }
         } else if (requests == 'jam_keluar') {
             const [result] = await pool.execute(
-                'UPDATE absensi SET absen_keluar = (STR_TO_DATE(? , "%H.%i")) WHERE id = ?',
+                'UPDATE absensi SET absen_keluar = (STR_TO_DATE(? , "%H.%i")) WHERE id = ? AND tanggal = CURDATE()',
                 [absen_keluar, id]
             )
             return NextResponse.json(

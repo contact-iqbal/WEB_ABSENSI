@@ -26,10 +26,18 @@ interface DataResult {
     status: string;
   }>;
   aktivitas_terkini: Array<{
-    tipe: string;
-    nama: string;
-    waktu: string;
-    aktivitas: string;
+    absen: Array<{
+      tipe: string;
+      nama: string;
+      waktu: string;
+      aktivitas: string;
+    }>
+    keluar: Array<{
+      tipe: string;
+      nama: string;
+      waktu: string;
+      aktivitas: string;
+    }>
   }>;
 }
 export default function DashboardPage() {
@@ -62,35 +70,35 @@ export default function DashboardPage() {
     bgColor: string;
     change: string;
   }> = [
-    {
-      title: "Total Karyawan",
-      value: String(Data?.karyawan ?? 0),
-      icon: faUsers,
-      bgColor: "bg-neutral-500",
-      change: "+0%",
-    },
-    {
-      title: "Hadir Hari Ini",
-      value: String(Data?.hadir_hari_ini ?? 0),
-      icon: faCheck,
-      bgColor: "bg-green-600",
-      change: "0%",
-    },
-    {
-      title: "Tidak Hadir",
-      value: String(Data?.tidak_hadir_hari_ini ?? 0),
-      icon: faTimes,
-      bgColor: "bg-red-600",
-      change: "0%",
-    },
-    {
-      title: "Total Gaji Bulan Ini",
-      value: formatRupiah(Data?.total_gaji_bulan_ini ?? 0),
-      icon: faMoneyBillWave,
-      bgColor: "bg-orange-400",
-      change: "+0%",
-    },
-  ];
+      {
+        title: "Total Karyawan",
+        value: String(Data?.karyawan ?? 0),
+        icon: faUsers,
+        bgColor: "bg-neutral-500",
+        change: "+0%",
+      },
+      {
+        title: "Hadir Hari Ini",
+        value: String(Data?.hadir_hari_ini ?? 0),
+        icon: faCheck,
+        bgColor: "bg-green-600",
+        change: "0%",
+      },
+      {
+        title: "Tidak Hadir",
+        value: String(Data?.tidak_hadir_hari_ini ?? 0),
+        icon: faTimes,
+        bgColor: "bg-red-600",
+        change: "0%",
+      },
+      {
+        title: "Total Gaji Bulan Ini",
+        value: formatRupiah(Data?.total_gaji_bulan_ini ?? 0),
+        icon: faMoneyBillWave,
+        bgColor: "bg-orange-400",
+        change: "+0%",
+      },
+    ];
 
   return (
     <div className="space-y-6">
@@ -155,17 +163,16 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                      absen.status === "hadir"
-                        ? "bg-green-100 text-green-700"
-                        : absen.status === "terlambat"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : absen.status === "izin"
-                            ? "bg-blue-100 text-blue-700"
-                            : absen.status === "sakit"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-red-100 text-red-700"
-                    }`}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full ${absen.status === "hadir"
+                      ? "bg-green-100 text-green-700"
+                      : absen.status === "terlambat"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : absen.status === "izin"
+                          ? "bg-blue-100 text-blue-700"
+                          : absen.status === "sakit"
+                            ? "bg-orange-100 text-orange-700"
+                            : "bg-red-100 text-red-700"
+                      }`}
                   >
                     {absen.status.charAt(0).toUpperCase() +
                       absen.status.slice(1)}
@@ -186,36 +193,43 @@ export default function DashboardPage() {
           </h3>
           {Data?.aktivitas_terkini && Data.aktivitas_terkini.length > 0 ? (
             <div className="space-y-3">
-              {Data.aktivitas_terkini.map((aktivitas, index) => (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div
-                    className={`w-2 h-2 mt-2 rounded-full ${
-                      aktivitas.tipe === "absensi"
-                        ? "bg-green-500"
-                        : "bg-blue-500"
-                    }`}
-                  ></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-800">
-                      {aktivitas.nama}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {aktivitas.aktivitas}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(aktivitas.waktu).toLocaleString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        day: "numeric",
-                        month: "short",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {Data?.aktivitas_terkini?.[0] &&
+                [...Data.aktivitas_terkini[0].keluar,
+                ...Data.aktivitas_terkini[0].absen]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.waktu).getTime() -
+                      new Date(a.waktu).getTime()
+                  ).slice(0,5)
+                  .map((aktivitas, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div
+                        className={`w-2 h-2 mt-2 rounded-full ${aktivitas.tipe === "absensi"
+                          ? "bg-green-500"
+                          : "bg-blue-500"
+                          }`}
+                      ></div>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800">
+                          {aktivitas.nama}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {aktivitas.aktivitas}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(aktivitas.waktu).toLocaleString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
@@ -223,7 +237,7 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-        <div className="bg-white col-span-2 rounded-lg shadow-md p-6">
+        <div className="bg-white col-span-1 lg:col-span-2 rounded-lg shadow-md p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">
             Convert Spreadshseet to database
           </h3>

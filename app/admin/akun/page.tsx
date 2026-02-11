@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL, faWarning } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL, faWarning, faFileExcel, faFileExport } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
@@ -201,10 +201,14 @@ export default function KaryawanPage() {
             <FontAwesomeIcon icon={faFileImport} />
             Import Excel
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" onClick={handlecreate}>
+          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+            <FontAwesomeIcon icon={faFileExport} />
+            Export to Excel
+          </button>
+          {/* <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium" onClick={handlecreate}>
             <FontAwesomeIcon icon={faPlus} />
             Tambah Karyawan
-          </button>
+          </button> */}
         </div>
       </div>
 
