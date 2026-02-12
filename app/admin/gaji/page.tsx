@@ -41,7 +41,8 @@ export default function GajiPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetchGaji();
+    // fetchGaji();
+    handleHitungOtomatis()
   }, [bulan, tahun, filterStatus, searchTerm]);
 
   const fetchGaji = async () => {
@@ -77,7 +78,7 @@ export default function GajiPage() {
 
       const result = await response.json();
       if (result.success) {
-        await showSuccess("Sukses", result.message);
+        // await showSuccess("Sukses", result.message);
         fetchGaji();
       } else {
         await showError("Error", result.message);

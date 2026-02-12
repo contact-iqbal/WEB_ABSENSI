@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
 import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
+import * as XLSX from 'xlsx';
 
 interface karyawan {
   id: Number,
@@ -25,6 +26,7 @@ interface pendingUpdateValue {
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
+  const [AccInfo, SetAccInfo] = useState([]);
   const [editing, Setediting] = useState<null | Number>(0);
   const router = useRouter()
   let [pendingUpdate, SetpendingUpdate] = useState<pendingUpdate>({
@@ -189,6 +191,100 @@ export default function KaryawanPage() {
     fetchkaryawan()
   }
 
+  const exportexcel = async () => {
+    const combine = new Map()
+    const responses_account = await fetch('/api/admin/account')
+    const result_account = await responses_account.json();
+    const responses_karyawan = await fetch('/api/admin/karyawan')
+    const result_karyawan = await responses_karyawan.json();
+
+    result_account?.result?.forEach((accounts: { id: any; }) => {
+      combine.set(accounts.id, accounts)
+    });
+
+    const combinedarray = result_karyawan.result.map((karyawan: { id: any; }) => {
+      const akundetail = combine.get(karyawan.id)
+      return {
+        ...karyawan,
+        ...akundetail
+      }
+    })
+
+    function formatStatus(status: string) {
+      if (!status) return "";
+      return status
+        .split("_")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+    }
+    function formatDivisi(divisi: string) {
+      if (!divisi) return "";
+      if (divisi == 'DNA') {
+        return 'DNA Jaya Group';
+      } else if (divisi == 'RT') {
+        return 'Rizqi Tour';
+      } else {
+        return divisi.toUpperCase();
+      }
+    }
+    function formatDate(date: string | number | Date) {
+      if (!date) return "";
+      return new Date(date).toLocaleDateString("id-ID");
+    }
+    const cleanedData = combinedarray.map((emp: {
+      password: any; id: any; nama: any; jabatan: any; devisi: any; status: any; NIK: any; tempat_lahir: any; tanggal_lahir: any; jenis_kel: any; agama: any; alamat: any; email: any; no_telp: any; gaji_pokok: any; username: any; type: any; acc_created: any;
+    }) => ({
+      ID: emp.id,
+      Nama: emp.nama || "",
+      Jabatan: emp.jabatan.toUpperCase(),
+      Divisi: formatDivisi(emp.devisi),
+      Status: formatStatus(emp.status),
+      NIK: emp.NIK || "",
+      'Tempat Lahir': emp.tempat_lahir || "",
+      'Tanggal Lahir': formatDate(emp.tanggal_lahir),
+      'Jenis Kelamin': emp.jenis_kel || "",
+      Agama: emp.agama || "",
+      Alamat: emp.alamat || "",
+      Email: emp.email || "",
+      'No Telp': emp.no_telp || "",
+      'Gaji Pokok': emp.gaji_pokok || 0,
+      Username: emp.username,
+      Password: emp.password,
+      'Tanggal Dibuat': formatDate(emp.acc_created)
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(cleanedData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet)
+    const cols = Object.keys(cleanedData[0]);
+    const colWidths = cols.map((col) => {
+      const maxLength = Math.max(
+        col.length,
+        ...cleanedData.map((row: { [x: string]: { toString: () => { (): any; new(): any; length: any; }; }; }) => (row[col] ? row[col].toString().length : 0))
+      );
+      return { wch: maxLength + 2 };
+    });
+    worksheet["!cols"] = colWidths;
+    try {
+      XLSX.writeFile(workbook, 'data.xlsx', { compression: true })
+      const toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        customClass: {
+          popup: 'colored-toast',
+        },
+        iconColor: 'white',
+        timer: 3000,
+        timerProgressBar: true,
+      })
+      toast.fire({ icon: 'info', title: 'Download akan dimulai' })
+    } catch (e) {
+      console.log(e)
+    }
+
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -201,7 +297,7 @@ export default function KaryawanPage() {
             <FontAwesomeIcon icon={faFileImport} />
             Import Excel
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium" onClick={() => (exportexcel())}>
             <FontAwesomeIcon icon={faFileExport} />
             Export to Excel
           </button>
@@ -325,7 +421,7 @@ export default function KaryawanPage() {
           </table>
         </div>
       </div >
-      <p className='text-neutral-500 w-full pl-3'><FontAwesomeIcon icon={faWarning}/> jika lupa password, password tidak bisa dibaca dan hanya bisa di ganti</p>
+      <p className='text-neutral-500 w-full pl-3'><FontAwesomeIcon icon={faWarning} /> jika lupa password, password tidak bisa dibaca dan hanya bisa di ganti</p>
     </div >
   );
 }

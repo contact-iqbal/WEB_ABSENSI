@@ -188,7 +188,7 @@ export default function AbsensiPage() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-800">{item.nama}</p>
-                      <p className="text-sm text-gray-600">{item.jabatan}</p>
+                      <p className="text-xs text-gray-600">{item.jabatan}</p>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       {item.absen_masuk

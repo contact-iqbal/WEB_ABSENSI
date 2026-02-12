@@ -66,7 +66,7 @@ export default function ProfilPage() {
     if (alias === "pegawai_tetap") {
       return "Karyawan Tetap"
     } else {
-      return ""
+      return "-"
     }
   }
 
