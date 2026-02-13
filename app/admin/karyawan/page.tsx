@@ -24,11 +24,13 @@ import {
 } from "@/lib/sweetalert";
 
 interface karyawan {
+  nik: string;
   id: Number;
   nama: String;
   jabatan: String;
   devisi: String;
   status: String;
+  profile_picture: String;
 }
 interface pendingUpdate {
   id: Number;
@@ -191,7 +193,7 @@ export default function KaryawanPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Data Karyawan</h1>
@@ -356,194 +358,191 @@ export default function KaryawanPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full table-fixed">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-2.5">
-                  ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Nama
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Jabatan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Devisi
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Karyawan.map((k) => (
-                <tr key={k.id as number} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-gray-800">
-                      {k.id.toString()}
-                    </p>
-                  </td>
-                  {editing == k.id ? (
-                    <td className="p-2">
+      </div>
+      <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+        {Karyawan.map((k) => {
+          const isEditing = editing === k.id;
+          return (
+            <div
+              key={k.id as number}
+              className={`group bg-white border rounded-2xl transition-all duration-300 ${isEditing
+                ? "border-blue-400 shadow-lg ring-1 ring-blue-100"
+                : "border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
+                }`}
+            >
+              {/* TOP BAR / HEADER */}
+              <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Avatar Placeholder */}
+                  {Karyawan && k.profile_picture ? (
+                    <img className="h-14 w-14 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-inner" src={k.profile_picture.toString()} />
+                  ) : (
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-inner uppercase">
+                      {k.nama.charAt(0)}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    {isEditing ? (
                       <input
                         type="text"
-                        className="w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg"
+                        className="block text-neutral-700 w-full text-lg font-semibold border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                         value={String(pendingUpdate.value?.nama ?? "")}
                         onChange={(e) =>
                           SetpendingUpdate((prev) => ({
                             ...prev,
-                            value: {
-                              ...(prev.value ?? {}),
-                              nama: e.target.value,
-                            },
+                            value: { ...(prev.value ?? {}), nama: e.target.value },
                           }))
                         }
                       />
-                    </td>
-                  ) : (
-                    <td className="px-6 py-4 text-gray-600">{k.nama}</td>
-                  )}
-                  {editing == k.id ? (
-                    <td className="p-2 text-gray-600">
-                      <select
-                        name="jabatan"
-                        id="jabatan"
-                        className="w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg"
-                        value={String(pendingUpdate.value?.jabatan ?? "")}
-                        onChange={(e) =>
-                          SetpendingUpdate((prev) => ({
-                            ...prev,
-                            value: {
-                              ...(prev.value ?? {}),
-                              jabatan: e.target.value,
-                            },
-                          }))
-                        }
-                      >
-                        <option value="karyawan">Karyawan</option>
-                        <option value="bendahara">Bendahara</option>
-                      </select>
-                    </td>
-                  ) : (
-                    <td className="px-6 py-4 text-gray-600 capitalize">
-                      {k.jabatan}
-                    </td>
-                  )}
-                  {editing == k.id ? (
-                    <td className="p-2 text-gray-600">
-                      <select
-                        name="devisi"
-                        id="devisi"
-                        className="w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg"
-                        value={String(pendingUpdate.value?.devisi ?? "")}
-                        onChange={(e) =>
-                          SetpendingUpdate((prev) => ({
-                            ...prev,
-                            value: {
-                              ...(prev.value ?? {}),
-                              devisi: e.target.value,
-                            },
-                          }))
-                        }
-                      >
-                        <option value="default">-</option>
-                        <option value="DNA">DNA Jaya Group</option>
-                        <option value="RT">Rizqi Tour</option>
-                      </select>
-                    </td>
-                  ) : (
-                    <td className="px-6 py-4 text-gray-600 capitalize">
-                      {k.devisi == "default"
-                        ? "-"
-                        : k.devisi == "DNA"
-                          ? "DNA Jaya Group"
-                          : k.devisi == "RT"
-                            ? "Rizqi Tour"
-                            : ""}
-                    </td>
-                  )}
-                  {editing == k.id ? (
-                    <td className="p-2 text-gray-600">
-                      <select
-                        name="status"
-                        id="status"
-                        className="w-full text-neutral-700 border border-neutral-300 px-4 py-2 rounded-lg"
-                        value={String(pendingUpdate.value?.status ?? "")}
-                        onChange={(e) =>
-                          SetpendingUpdate((prev) => ({
-                            ...prev,
-                            value: {
-                              ...(prev.value ?? {}),
-                              status: e.target.value,
-                            },
-                          }))
-                        }
-                      >
-                        <option value="default">-</option>
-                        <option value="pegawai_tetap">Karyawan tetap</option>
-                      </select>
-                    </td>
-                  ) : (
-                    <td className="px-6 py-4">
-                      {k.status == "default" ? (
-                        <span
-                          className={`px-3 py-1 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-full`}
+                    ) : (
+                      <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                        {k.nama}
+                      </h2>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                        ID: {k.id.toString()}
+                      </span>
+                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        {k.nik || "No NIK"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {k.id !== 1 && (
+                  <button
+                    className={`px-6 py-2 rounded-xl font-medium transition-all ${isEditing
+                      ? "bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-100"
+                      : "bg-gray-900 text-white hover:bg-gray-800"
+                      }`}
+                    onClick={() => handleEditSave(k)}
+                  >
+                    {isEditing ? "Save Changes" : "Edit Profile"}
+                  </button>
+                )}
+              </div>
+
+              {/* DETAILS GRID */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                {/* Section 1: Employment */}
+                <div className="space-y-4">
+                  <h3 className="text-[10px] uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2">
+                    <span className="w-4 h-px bg-gray-200"></span> Employment
+                  </h3>
+
+                  <div className="grid gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Position</p>
+                      {isEditing ? (
+                        <select
+                          className="w-full text-neutral-700 border border-gray-300 rounded-lg text-sm"
+                          value={String(pendingUpdate.value?.jabatan ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), jabatan: e.target.value },
+                            }))
+                          }
                         >
-                          No Info
-                        </span>
+                          <option value="karyawan">Karyawan</option>
+                          <option value="bendahara">Bendahara</option>
+                        </select>
                       ) : (
-                        <span
-                          className={`px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full`}
+                        <p className="text-sm font-semibold text-gray-700 capitalize">{k.jabatan}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Division</p>
+                      {isEditing ? (
+                        <select
+                          className="w-full text-neutral-700 border border-gray-300 rounded-lg text-sm"
+                          value={String(pendingUpdate.value?.devisi ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), devisi: e.target.value },
+                            }))
+                          }
                         >
-                          {aliasesstatus(k.status)}
+                          <option value="default">-</option>
+                          <option value="DNA">DNA Jaya Group</option>
+                          <option value="RT">Rizqi Tour</option>
+                        </select>
+                      ) : (
+                        <p className="text-sm font-semibold text-gray-700 uppercase">
+                          {k.devisi === "default" ? "-" : k.devisi}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Personal */}
+                <div className="space-y-4">
+                  <h3 className="text-[10px] uppercase tracking-widest font-bold text-gray-400 flex items-center gap-2">
+                    <span className="w-4 h-px bg-gray-200"></span> Personal Info
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500">Gender</p>
+                      <p className="text-sm font-medium text-gray-700">Male</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Religion</p>
+                      <p className="text-sm font-medium text-gray-700">Islam</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Birth Date</p>
+                      <p className="text-sm font-medium text-gray-700">Jakarta, 12 Jan 1995</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 3: Contact & Status */}
+                <div className="space-y-4 bg-gray-50 p-4 rounded-xl">
+                  <h3 className="text-[10px] uppercase tracking-widest font-bold text-gray-400">Status & Contact</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Contract</span>
+                      {isEditing ? (
+                        <select
+                          className="border text-neutral-700 border-gray-300 px-2 py-1 rounded text-xs"
+                          value={String(pendingUpdate.value?.status ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), status: e.target.value },
+                            }))
+                          }
+                        >
+                          <option value="default">-</option>
+                          <option value="pegawai_tetap">Tetap</option>
+                        </select>
+                      ) : (
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${k.status === 'pegawai_tetap' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                          {k.status === "default" ? "UNSET" : "PERMANENT"}
                         </span>
                       )}
-                    </td>
-                  )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Email</p>
+                      <p className="text-sm font-medium text-blue-600 truncate">employee@company.com</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Salary</p>
+                      <p className="text-sm font-bold text-gray-800">Rp 0.000.000</p>
+                    </div>
+                  </div>
+                </div>
 
-                  <td className="flex px-6 py-4 justify-end gap-1">
-                    {k.id !== 1 && (
-                      <>
-                        <button
-                          className="bg-blue-500 p-1.5 hover:bg-blue-600 hover:scale-105 rounded-lg transition cursor-pointer"
-                          onClick={() => handleEditSave(k)}
-                        >
-                          {editing == k.id ? (
-                            <div className="flex flex-row justify-center items-center w-fit gap-2">
-                              <p>Apply</p>
-                              <FontAwesomeIcon icon={faSave} />
-                            </div>
-                          ) : (
-                            <FontAwesomeIcon icon={faPencil} />
-                          )}
-                        </button>
-                        {/* <button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button> */}
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {Karyawan.length == 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-12 text-center text-gray-500"
-                  >
-                    Belum ada data karyawan. Silakan tambah data atau import
-                    dari Excel.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

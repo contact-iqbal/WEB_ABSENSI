@@ -36,11 +36,12 @@ export default function AbsensiPage() {
     tidak_hadir: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+  const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState("Semua Status");
 
   useEffect(() => {
     getabsensi();
+    console.log(filterDate)
   }, [filterDate, filterStatus, searchTerm]);
 
   const getabsensi = async () => {
@@ -57,7 +58,7 @@ export default function AbsensiPage() {
     }
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Data Absensi</h1>
@@ -184,7 +185,7 @@ export default function AbsensiPage() {
                 absensi.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-gray-800">
-                      {new Date(item.tanggal).toLocaleDateString("id-ID")}
+                      {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/','-')}
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-800">{item.nama}</p>

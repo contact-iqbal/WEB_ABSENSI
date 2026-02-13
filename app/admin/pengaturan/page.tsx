@@ -1,48 +1,75 @@
 'use client'
+import { showSuccess } from "@/lib/sweetalert";
 import { useEffect, useState } from "react";
 
 interface config {
   nama_perusahaan: String,
-  alamat_perusahaan: any,
-  no_telp_perusahaan: any,
-  email_perusahaan: any,
-  jam_masuk: any,
-  jam_pulang: any,
-  toleransi_telat: any
+  alamat_perusahaan?: any,
+  no_telp_perusahaan?: any,
+  email_perusahaan?: any,
+  jam_masuk?: any,
+  jam_pulang?: any,
+  toleransi_telat?: any
 }
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
   const [configdata, Setconfigdata] = useState<config | null>(null)
+  let [pendingUpdate, SetpendingUpdate] = useState<config>({
+    nama_perusahaan: '',
+    alamat_perusahaan: '',
+    no_telp_perusahaan: '',
+    email_perusahaan: '',
+    jam_masuk: 0,
+    jam_pulang: 0,
+    toleransi_telat: 0
+  })
 
   const items = [
     {
-      id: 1,
       section: 'Umum'
     },
     {
-      id: 2,
       section: 'Jam Kerja'
     },
     {
-      id: 3,
       section: 'Gaji & Tunjangan'
+    },
+    {
+      section: 'Backup & Restore'
     },
   ]
   useEffect(() => {
     fetchconfig()
   }, [])
-  
+
   const fetchconfig = async () => {
     const configdatas = await fetch('/api/admin/config')
     const configresult = await configdatas.json()
-    
+
     if (configresult.success) {
       Setconfigdata(configresult.result[0])
+      SetpendingUpdate(configresult.result[0])
+    }
+  }
+  const sendupdate = async () => {
+    const configupdate = await fetch('/api/admin/config', {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...pendingUpdate,
+      }),
+    })
+    const configupdateresult = await configupdate.json()
+    if (configupdateresult.success) {
+      showSuccess('Sukses', configupdateresult.message)
+      fetchconfig()
     }
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Pengaturan</h1>
         <p className="text-gray-600 mt-1">Kelola pengaturan sistem absensi</p>
@@ -52,29 +79,11 @@ export default function PengaturanPage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-4">
             <nav className="space-y-1">
-              {items.map((itm) => (
-                <button key={itm.id} className={`w-full text-left px-4 py-3 ${section === itm.id ? 'bg-blue-50 text-blue-700 rounded-lg font-medium' : 'text-gray-700 hover:bg-gray-50 rounded-lg'}`} onClick={() => (Setsection(itm.id))}>
+              {items.map((itm, index) => (
+                <button key={index + 1} className={`w-full text-left px-4 py-3 ${section === index + 1 ? 'bg-blue-50 text-blue-700 rounded-lg font-medium' : 'text-gray-700 hover:bg-gray-50 rounded-lg'}`} onClick={() => (Setsection(index + 1))}>
                   {itm.section}
                 </button>
               ))}
-              {/* <button className="w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-lg font-medium" onClick={() => (Setsection(1))}>
-                Umum
-              </button>
-              <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => (Setsection(2))}>
-                Jam Kerja
-              </button>
-              <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => (Setsection(3))}>
-                Gaji & Tunjangan
-              </button>
-              <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => (Setsection(4))}>
-                Notifikasi
-              </button>
-              <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => (Setsection(5))}>
-                Pengguna
-              </button>
-              <button className="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg" onClick={() => (Setsection(6))}>
-                Backup & Restore
-              </button> */}
             </nav>
           </div>
         </div>
@@ -95,6 +104,12 @@ export default function PengaturanPage() {
                     type="text"
                     placeholder="Masukkan nama perusahaan"
                     defaultValue={String(configdata?.nama_perusahaan ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        nama_perusahaan: e.target.value
+                      }))
+                    }
                     className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -107,6 +122,12 @@ export default function PengaturanPage() {
                     rows={3}
                     placeholder="Masukkan alamat perusahaan"
                     defaultValue={String(configdata?.alamat_perusahaan ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        alamat_perusahaan: e.target.value
+                      }))
+                    }
                     className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -120,6 +141,32 @@ export default function PengaturanPage() {
                       type="tel"
                       placeholder="Nomor telepon"
                       defaultValue={String(configdata?.no_telp_perusahaan ?? '')}
+                      onKeyDown={(e) => {
+                        const allowedKeys = [
+                          "Backspace",
+                          "Delete",
+                          "ArrowLeft",
+                          "ArrowRight",
+                          "Tab",
+                          "Ctrl",
+                          "Shift"
+                        ];
+
+                        if (
+                          allowedKeys.includes(e.key) ||
+                          /^[0-9-+]$/.test(e.key)
+                        ) {
+                          return;
+                        }
+
+                        e.preventDefault();
+                      }}
+                      onChange={(e) =>
+                        SetpendingUpdate(prev => ({
+                          ...prev,
+                          no_telp_perusahaan: e.target.value.replace(/[^0-9+]/g, '')
+                        }))
+                      }
                       className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -132,6 +179,12 @@ export default function PengaturanPage() {
                       type="email"
                       placeholder="Email perusahaan"
                       defaultValue={String(configdata?.email_perusahaan ?? '')}
+                      onChange={(e) =>
+                        SetpendingUpdate(prev => ({
+                          ...prev,
+                          email_perusahaan: e.target.value
+                        }))
+                      }
                       className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -154,6 +207,12 @@ export default function PengaturanPage() {
                     <input
                       type="time"
                       defaultValue={String(configdata?.jam_masuk ?? '')}
+                      onChange={(e) =>
+                        SetpendingUpdate(prev => ({
+                          ...prev,
+                          jam_masuk: e.target.value + ':00'
+                        }))
+                      }
                       className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -165,6 +224,12 @@ export default function PengaturanPage() {
                     <input
                       type="time"
                       defaultValue={String(configdata?.jam_pulang ?? '')}
+                      onChange={(e) =>
+                        SetpendingUpdate(prev => ({
+                          ...prev,
+                          jam_pulang: e.target.value + ':00'
+                        }))
+                      }
                       className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -177,6 +242,12 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     defaultValue={String(configdata?.toleransi_telat ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        toleransi_telat: e.target.value
+                      }))
+                    }
                     className="w-full px-4 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -239,11 +310,33 @@ export default function PengaturanPage() {
               </div>
             </div>
           }
+          {section == 4 &&
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Pengaturan Database
+              </h3>
+
+              <div className="space-y-4 grid grid-cols-2 gap-4 justify-end justify-items-end">
+                <div className="w-full text-black">
+                  <h5>Import</h5>
+                  <input type="file" className="px-6 py-2 w-full border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium" title="Upload" accept="sql" />
+                </div>
+                <div className="w-full text-black">
+                  <h5>Export</h5>
+                  <button className="px-6 py-2 w-full border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                    Export
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
           <div className="flex justify-end gap-3">
             <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
               Batal
             </button>
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              onClick={() => (sendupdate())}
+            >
               Simpan Perubahan
             </button>
           </div>

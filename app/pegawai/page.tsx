@@ -15,15 +15,37 @@ interface session {
   success: Boolean,
   userId: Number,
 }
+interface config {
+  nama_perusahaan?: String,
+  alamat_perusahaan?: any,
+  no_telp_perusahaan?: any,
+  email_perusahaan?: any,
+  jam_masuk?: any,
+  jam_pulang?: any,
+  toleransi_telat?: any
+}
+interface history {
+  hadir: Number,
+  terlambat: Number,
+  history: Array<{
+    absen_masuk: any | 0,
+    absen_keluar: any | 0,
+    tanggal: any,
+    status: String
+  }>
+}
 
 export default function PegawaiDashboard() {
   const [jamMasuk, setJamMasuk] = useState<string | null>(null);
   const [jamKeluar, setJamKeluar] = useState<string | null>(null);
+  const [configData, SetConfigData] = useState<config>();
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [Sessions, setSession] = useState<session | null>(null)
+  const [absenhistory, setabsenhistory] = useState<history | null>();
   useEffect(() => {
     storesession()
+    configfetch()
   }, [])
   const storesession = async () => {
     try {
@@ -32,11 +54,34 @@ export default function PegawaiDashboard() {
       if (sessionresult.success) {
         setSession(sessionresult)
         setabsen(sessionresult.userId)
+        getstats(Number(sessionresult.userId))
       }
     } catch (e) {
       console.log(e)
     }
   }
+  const configfetch = async () => {
+    try {
+      const checktime = await fetch('/api/karyawan/config')
+      const checktimeresult = await checktime.json()
+      const config = checktimeresult.result[0]
+      SetConfigData(config)
+    }
+    catch (e) {
+      console.log(e)
+    }
+  }
+  const cektelat = (time: string, menit_toleransi: number) => {
+    const [h, m, s] = time.split(':').map(Number);
+    const addMinutes = menit_toleransi;
+
+    const totalMinutes = h * 60 + m + addMinutes;
+
+    const newH = Math.floor(totalMinutes / 60);
+    const newM = totalMinutes % 60;
+
+    return `${String(newH).padStart(2, '0')}.${String(newM).padStart(2, '0')}.${String(s).padStart(2, '0')}`;
+  };
   const setabsen = async (id: Number) => {
     try {
       const absendata = await fetch('/api/karyawan/absen', {
@@ -55,8 +100,29 @@ export default function PegawaiDashboard() {
       if (absendatas.success) {
         setJamMasuk(absendatas.result[0].absen_masuk.substring(0, 5).replace(':', '.'))
         setJamKeluar(absendatas.result[0].absen_keluar.substring(0, 5).replace(':', '.'))
-        console.log(absendatas.result)
+        // console.log(absendatas.result)
       }
+    } catch (e) {
+      console.log(e)
+    }
+  }
+  const getstats = async (id: number) => {
+    try {
+      const absendata = await fetch('/api/karyawan/absen', {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: id,
+          requests: 'fetch_all'
+        })
+      }
+
+      )
+      const absendatas = await absendata.json()
+      console.log(absendatas)
+      setabsenhistory(absendatas.result)
     } catch (e) {
       console.log(e)
     }
@@ -89,6 +155,7 @@ export default function PegawaiDashboard() {
 
     if (!jamMasuk) {
       setJamMasuk(time);
+      const islate:boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
       const inputtodb = await fetch('/api/karyawan/absen', {
         method: 'POST',
         headers: {
@@ -97,14 +164,15 @@ export default function PegawaiDashboard() {
         body: JSON.stringify({
           id: Sessions?.userId,
           absen_masuk: time,
-          status: 'hadir',
+          status: islate ? 'terlambat' : 'hadir',
           requests: 'jam_masuk'
         })
       }
       )
       const resultinputtodb = await inputtodb.json()
-      console.log(resultinputtodb)
-      console.log(time)
+      // console.log(resultinputtodb)
+      // console.log(time)
+      // console.log(islate)
       await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
     } else if (!jamKeluar) {
       if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
@@ -122,8 +190,8 @@ export default function PegawaiDashboard() {
         }
         )
         const resultinputtodbkl = await inputtodbkl.json()
-        console.log(resultinputtodbkl)
-        console.log(time)
+        // console.log(resultinputtodbkl)
+        // console.log(time)
         await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
       }
     }
@@ -164,7 +232,7 @@ export default function PegawaiDashboard() {
     if (time == 'null') return 'text-gray-300'
     //console.log(time)
 
-    return toMinutes(time) > toMinutes('08.15.00')
+    return toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
       ? 'text-red-500'
       : 'text-gray-800'
   }
@@ -233,7 +301,7 @@ export default function PegawaiDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium mb-1">Absensi Bulan Ini</p>
-              <h3 className="text-3xl font-bold text-gray-800">0 Hari</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{absenhistory && absenhistory?.hadir.toString()} Hari</h3>
             </div>
             <div className="bg-gray-100 w-14 h-14 rounded-xl flex items-center justify-center">
               <FontAwesomeIcon icon={faCalendarCheck} className="text-2xl text-gray-700" />
@@ -245,7 +313,7 @@ export default function PegawaiDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium mb-1">Total Keterlambatan</p>
-              <h3 className="text-3xl font-bold text-gray-800">0 Kali</h3>
+              <h3 className="text-3xl font-bold text-gray-800">{absenhistory && absenhistory?.terlambat.toString()} Kali</h3>
             </div>
             <div className="bg-gray-100 w-14 h-14 rounded-xl flex items-center justify-center">
               <FontAwesomeIcon icon={faClock} className="text-2xl text-gray-700" />
@@ -261,17 +329,17 @@ export default function PegawaiDashboard() {
         </div>
 
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {absenhistory?.history.slice(0,5).map((i,index) => (
             <div
-              key={i}
+              key={index}
               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
             >
               <div>
-                <p className="font-medium text-gray-800">Senin, {i} Jan 2024</p>
-                <p className="text-sm text-gray-500 mt-1">08:00 - 17:00</p>
+                <p className="font-medium text-gray-800">{new Date(i.tanggal).toLocaleDateString('id-ID',{ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm text-gray-500 mt-1">{i.absen_masuk != null && String(i.absen_masuk).replaceAll(':','.').slice(0,5)} - {i.absen_keluar != null && String(i.absen_keluar).replaceAll(':','.').slice(0,5)}</p>
               </div>
-              <span className="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-lg">
-                Hadir
+              <span className="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-full capitalize">
+                {i.status}
               </span>
             </div>
           ))}

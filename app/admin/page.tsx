@@ -101,7 +101,7 @@ export default function DashboardPage() {
     ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
         <p className="text-gray-600 mt-1">
@@ -109,7 +109,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
@@ -128,7 +128,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <div
-                className={`${stat.bgColor} w-14 h-14 rounded-full flex items-center justify-center text-white`}
+                className={`${stat.bgColor} hidden md:show w-14 h-14 rounded-full flex items-center justify-center text-white`}
               >
                 <FontAwesomeIcon icon={stat.icon} className="text-xl" />
               </div>

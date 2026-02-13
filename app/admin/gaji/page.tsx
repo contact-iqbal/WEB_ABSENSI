@@ -3,7 +3,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSync, faMoneyBillWave } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
-import { showError, showSuccess } from "@/lib/sweetalert";
+import { showError, showSuccess, showToast } from "@/lib/sweetalert";
 
 interface Gaji {
   id: number;
@@ -41,8 +41,7 @@ export default function GajiPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    // fetchGaji();
-    handleHitungOtomatis()
+    fetchGaji();
   }, [bulan, tahun, filterStatus, searchTerm]);
 
   const fetchGaji = async () => {
@@ -78,7 +77,7 @@ export default function GajiPage() {
 
       const result = await response.json();
       if (result.success) {
-        // await showSuccess("Sukses", result.message);
+        await showToast("Sukses", 'success');
         fetchGaji();
       } else {
         await showError("Error", result.message);
@@ -134,7 +133,7 @@ export default function GajiPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Penggajian</h1>

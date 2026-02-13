@@ -46,6 +46,21 @@ export async function POST(request: NextRequest) {
                 },
                 { status: 200 }
             )
+        } else if (requests == 'fetch_all') {
+            const [fetchabsenall] = await pool.execute('SELECT * FROM absensi WHERE id = ? ORDER BY tanggal DESC', [id])
+            const [statshadir]:any = await pool.execute('SELECT COUNT(*) AS hadir_result FROM absensi WHERE id = ? AND status = "hadir"', [id])
+            const [statsterlambat]:any = await pool.execute('SELECT COUNT(*) AS terlambat_result FROM absensi WHERE id = ? AND status = "terlambat"', [id])
+            return NextResponse.json(
+                {
+                    success: true,
+                    result: {
+                        history: fetchabsenall,
+                        hadir: statshadir[0].hadir_result,
+                        terlambat: statsterlambat[0].terlambat_result,
+                    },
+                },
+                { status: 200 }
+            )
         }
     } catch (e) {
         console.log(e);

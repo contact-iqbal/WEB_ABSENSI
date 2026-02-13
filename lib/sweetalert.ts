@@ -55,6 +55,16 @@ export const showToast = (title: string, icon: 'success' | 'error' | 'warning' |
     position: 'top-end',
     icon,
     title,
+    customClass: {
+      popup: 'colored-toast',
+    },
+    showClass: {
+      popup: 'animate__animated animate__fadeInDownBig'
+    },
+    hideClass: {
+      popup: 'animate__animated animate__fadeOutUpBig' 
+    },
+    iconColor: 'white',
     showConfirmButton: false,
     timer: 3000,
     timerProgressBar: true,

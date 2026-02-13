@@ -5,7 +5,7 @@ import { faChartBar, faMoneyBillWave, faUsers, faChartLine, faFileExport } from 
 
 export default function LaporanPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Laporan</h1>

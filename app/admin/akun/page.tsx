@@ -5,7 +5,7 @@ import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheck
 import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
-import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
+import { showConfirm, showError, showInfo, showSuccess, showToast } from '@/lib/sweetalert';
 import * as XLSX from 'xlsx';
 
 interface karyawan {
@@ -49,65 +49,6 @@ export default function KaryawanPage() {
     if (result.success) {
       SetKaryawan(result.result)
     }
-  }
-  const handlecreate = async () => {
-    Swal.fire({
-      title: "Buat akun",
-      html: `
-        <input id="username" class="swal2-input" placeholder="Username">
-        <input id="password" class="swal2-input" placeholder="Password">
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Buat Akun",
-      showLoaderOnConfirm: true,
-      preConfirm: async () => {
-        const usernameInput = (document.getElementById('username') as HTMLInputElement);
-        const passwordInput = (document.getElementById('password') as HTMLInputElement);
-        const usernameValue = usernameInput.value;
-        const passwordValue = passwordInput.value;
-        try {
-          const response = await fetch('/api/admin/account', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username: usernameValue,
-              password: passwordValue,
-              action: 'create'
-            })
-          })
-          if (!response.ok) {
-            const data = await response.json();
-            // console.log(JSON.stringify(data.error))
-            return Swal.showValidationMessage(`
-            ${(data.error).replace(/"/g, '')}`
-            );
-          }
-          return response.json();
-        } catch (error) {
-          Swal.showValidationMessage(`
-            Request failed: ${error}
-          `);
-        }
-      },
-      allowOutsideClick: () => !Swal.isLoading()
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        await Swal.fire({
-          icon: 'success',
-          title: `Sukses!`,
-          text: result.value.message
-        });
-        fetchkaryawan()
-      } else if (!result.isDismissed && !result.isDenied) {
-        await Swal.fire({
-          icon: 'error',
-          title: `Uh oh`,
-          text: result.value?.error
-        });
-      }
-    })
   }
 
   const handledelete = async (i: Number) => {
@@ -267,18 +208,7 @@ export default function KaryawanPage() {
     worksheet["!cols"] = colWidths;
     try {
       XLSX.writeFile(workbook, 'data.xlsx', { compression: true })
-      const toast = Swal.mixin({
-        toast: true,
-        position: "top-end",
-        showConfirmButton: false,
-        customClass: {
-          popup: 'colored-toast',
-        },
-        iconColor: 'white',
-        timer: 3000,
-        timerProgressBar: true,
-      })
-      toast.fire({ icon: 'info', title: 'Download akan dimulai' })
+      showToast('Download dimulai','info')
     } catch (e) {
       console.log(e)
     }
@@ -286,7 +216,7 @@ export default function KaryawanPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Data Akun Karyawan</h1>
