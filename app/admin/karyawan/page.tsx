@@ -22,9 +22,17 @@ import {
   showInfo,
   showSuccess,
 } from "@/lib/sweetalert";
+import { aliasesdevision, aliasesgender, formatIndoPhone } from "@/lib/aliases";
 
 interface karyawan {
-  nik: string;
+  NIK: any;
+  no_telp: string;
+  email: string;
+  alamat: string;
+  tanggal_lahir: string;
+  tempat_lahir: string;
+  agama: string;
+  jenis_kel: string;
   id: Number;
   nama: String;
   jabatan: String;
@@ -38,10 +46,20 @@ interface pendingUpdate {
   value?: pendingUpdateValue;
 }
 interface pendingUpdateValue {
+  no_telp?: string;
+  email?: string;
+  alamat?: string;
+  tanggal_lahir?: string;
+  tempat_lahir?: string;
+  agama?: string;
+  jenis_kel?: string;
+  NIK?: string;
+  id?: Number;
   nama?: String;
   jabatan?: String;
   devisi?: String;
-  status?: String
+  status?: String;
+  profile_picture?: String;
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
@@ -60,10 +78,19 @@ export default function KaryawanPage() {
     id: 0,
     action: "update",
     value: {
-      nama: "",
-      jabatan: "",
-      devisi: "",
-      status: ""
+      no_telp: '',
+      email: '',
+      alamat: '',
+      tanggal_lahir: '',
+      tempat_lahir: '',
+      agama: '',
+      jenis_kel: '',
+      NIK: '',
+      nama: '',
+      jabatan: '',
+      devisi: '',
+      status: '',
+      profile_picture: '',
     },
   });
   useEffect(() => {
@@ -128,7 +155,14 @@ export default function KaryawanPage() {
         k.nama != pendingUpdate.value?.nama ||
         k.jabatan != pendingUpdate.value?.jabatan ||
         k.devisi != pendingUpdate.value?.devisi ||
-        k.status != pendingUpdate.value?.status
+        k.status != pendingUpdate.value?.status ||
+        k.jenis_kel != pendingUpdate.value?.jenis_kel ||
+        k.agama != pendingUpdate.value?.agama ||
+        k.tempat_lahir != pendingUpdate.value?.tempat_lahir ||
+        k.tanggal_lahir != pendingUpdate.value?.tanggal_lahir ||
+        k.alamat != pendingUpdate.value?.alamat || 
+        k.email != pendingUpdate.value?.email || 
+        k.no_telp != pendingUpdate.value?.no_telp
       ) {
         handlechange(k.id, pendingUpdate.value);
       }
@@ -138,10 +172,19 @@ export default function KaryawanPage() {
         id: 0,
         action: "update",
         value: {
-          nama: "",
-          jabatan: "",
-          devisi: "",
-          status: ""
+          no_telp: '',
+          email: '',
+          alamat: '',
+          tanggal_lahir: '',
+          tempat_lahir: '',
+          agama: '',
+          jenis_kel: '',
+          NIK: '',
+          nama: '',
+          jabatan: '',
+          devisi: '',
+          status: '',
+          profile_picture: '',
         },
       });
     } else {
@@ -156,17 +199,19 @@ export default function KaryawanPage() {
           jabatan: k.jabatan,
           devisi: k.devisi,
           status: k.status,
+          no_telp: k.no_telp,
+          email: k.email,
+          alamat: k.alamat,
+          tanggal_lahir: k.tanggal_lahir,
+          tempat_lahir: k.tempat_lahir,
+          agama: k.agama,
+          jenis_kel: k.jenis_kel,
+          NIK: k.nik,
+          profile_picture: k.profile_picture
         },
       });
     }
   };
-  function aliasesstatus(alias: String) {
-    if (alias === "pegawai_tetap") {
-      return "Karyawan Tetap";
-    } else {
-      return "";
-    }
-  }
 
   const handlechange = async (id: Number, value: any) => {
     const updatestuff = await fetch("/api/admin/karyawan", {
@@ -405,7 +450,7 @@ export default function KaryawanPage() {
                         ID: {k.id.toString()}
                       </span>
                       <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                        {k.nik || "No NIK"}
+                        {k.NIK && k.NIK.toString() || "No NIK"}
                       </span>
                     </div>
                   </div>
@@ -474,7 +519,7 @@ export default function KaryawanPage() {
                         </select>
                       ) : (
                         <p className="text-sm font-semibold text-gray-700 uppercase">
-                          {k.devisi === "default" ? "-" : k.devisi}
+                          {k.devisi === "default" ? "-" : aliasesdevision(k.devisi)}
                         </p>
                       )}
                     </div>
@@ -489,15 +534,96 @@ export default function KaryawanPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-gray-500">Gender</p>
-                      <p className="text-sm font-medium text-gray-700">Male</p>
+                      {isEditing ? (
+                        <select
+                          className="border text-neutral-700 border-gray-300 px-2 py-1 rounded text-xs"
+                          value={String(pendingUpdate.value?.jenis_kel ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), jenis_kel: e.target.value },
+                            }))
+                          }
+                        >
+                          <option value="default">-</option>
+                          <option value="laki_laki">Laki Laki</option>
+                          <option value="perempuan">Perempuan</option>
+                        </select>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-700">{k.jenis_kel === 'default' || k.jenis_kel === null ? '-' : aliasesgender(k.jenis_kel)}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Religion</p>
-                      <p className="text-sm font-medium text-gray-700">Islam</p>
+                      {isEditing ? (
+                        <select
+                          className="border text-neutral-700 border-gray-300 px-2 py-1 rounded text-xs"
+                          value={String(pendingUpdate.value?.agama ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), agama: e.target.value },
+                            }))
+                          }
+                        >
+                          <option value="default">-</option>
+                          <option value="islam">Islam</option>
+                          <option value="kristen">Kristen</option>
+                          <option value="hindu">Hindu</option>
+                          <option value="budha">Budha</option>
+                          <option value="katolik">Katolik</option>
+                          <option value="konghucu">Konghucu</option>
+                        </select>
+                      ) : (
+                        <p className="text-sm font-medium text-gray-700">{k.agama === '' || k.agama === null ? '-' : k.agama}</p>
+                      )}
                     </div>
                     <div className="col-span-2">
                       <p className="text-xs text-gray-500">Birth Date</p>
-                      <p className="text-sm font-medium text-gray-700">Jakarta, 12 Jan 1995</p>
+                      <div className="flex text-black">
+                        {isEditing ? (
+                          <>
+                            <input
+                              type="text"
+                              className="text-sm font-medium text-gray-700 w-[90px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              value={String(pendingUpdate.value?.tempat_lahir ?? '')}
+                              onChange={(e) =>
+                                SetpendingUpdate((prev) => ({
+                                  ...prev,
+                                  value: { ...(prev.value ?? {}), tempat_lahir: e.target.value },
+                                }))
+                              }
+                            />
+                            ,
+                            <input type="date" className="text-black text-sm font-medium text-gray-700 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              value={new Date(String(pendingUpdate.value?.tanggal_lahir)).toLocaleDateString('en-CA').replaceAll('/', '-')}
+                              onChange={(e) =>
+                                SetpendingUpdate((prev) => ({
+                                  ...prev,
+                                  value: { ...(prev.value ?? {}), tanggal_lahir: e.target.value },
+                                }))} />
+                          </>
+                        ) : (
+                          <p className="text-sm font-medium text-gray-700">{k.tempat_lahir === '' || k.tempat_lahir === null ? '-' : k.tempat_lahir}, {k.tanggal_lahir === '' || k.tanggal_lahir === null ? '-' : new Date(k.tanggal_lahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).replaceAll('/', '-')}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500">Address</p>
+                      {isEditing ? (
+                        <textarea
+                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          value={String(pendingUpdate.value?.alamat ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), alamat: e.target.value },
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="text-sm font-medium text-gray-700">{k.alamat === '' || k.alamat === null ? '-' : k.alamat}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -520,7 +646,7 @@ export default function KaryawanPage() {
                           }
                         >
                           <option value="default">-</option>
-                          <option value="pegawai_tetap">Tetap</option>
+                          <option value="pegawai_tetap">Permanent</option>
                         </select>
                       ) : (
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${k.status === 'pegawai_tetap' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
@@ -530,7 +656,39 @@ export default function KaryawanPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Email</p>
-                      <p className="text-sm font-medium text-blue-600 truncate">employee@company.com</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          value={String(pendingUpdate.value?.email ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), email: e.target.value },
+                            }))
+                          }
+                        />
+                      ) : (
+                        <a href={`mailto:${k.email}`} className="text-sm font-medium text-blue-600 truncate">{k.email === '' || k.email === null ? '-' : k.email}</a>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Phone Number</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          value={String(pendingUpdate.value?.no_telp ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), no_telp: e.target.value },
+                            }))
+                          }
+                        />
+                      ) : (
+                        <a href={`tel:${k.no_telp}`} className="text-sm font-medium text-blue-600 truncate">{k.no_telp === '' || k.no_telp === null ? '-' : formatIndoPhone(k.no_telp)}</a>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Salary</p>

@@ -16,7 +16,6 @@ export default function LoginPage() {
     username: "",
     password: "",
     rememberme: false,
-    debug: false,
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -97,13 +96,13 @@ export default function LoginPage() {
             Selamat datang!
           </h1>
           <p className="text-neutral-500 mb-8">
-            Silahkan masukkan email dan password anda untuk login
+            Silahkan masukkan username dan password anda untuk login
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-bold text-neutral-700 mb-2">
-                Email <span className="text-red-500">*</span>
+                Username <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -111,7 +110,7 @@ export default function LoginPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
                 }
-                placeholder="eg. pixels@mail.com"
+                placeholder="Username"
                 className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black transition-all text-neutral-800"
               />
             </div>
@@ -168,7 +167,7 @@ export default function LoginPage() {
       </div>
 
       {/* SISI KANAN: Visual Pixel Pattern */}
-      <div className="hidden lg:flex w-1/2 bg-neutral-900 relative items-center justify-center overflow-hidden">
+      <div className="hidden lg:flex w-1/2 bg-[#223082] relative items-center justify-center overflow-hidden">
         {/* Pola Grid Pixel (CSS Pattern) */}
         <div
           className="absolute inset-0 opacity-20"

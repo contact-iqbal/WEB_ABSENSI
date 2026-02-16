@@ -115,6 +115,48 @@ export async function POST(request: NextRequest) {
           id,
         ]);
       }
+      if (id && value.jenis_kel) {
+        await pool.execute(`UPDATE karyawan SET jenis_kel = ? WHERE id = ?`, [
+          value.jenis_kel,
+          id,
+        ]);
+      }
+      if (id && value.agama) {
+        await pool.execute(`UPDATE karyawan SET agama = ? WHERE id = ?`, [
+          value.agama,
+          id,
+        ]);
+      }
+      if (id && value.tempat_lahir) {
+        await pool.execute(`UPDATE karyawan SET tempat_lahir = ? WHERE id = ?`, [
+          value.tempat_lahir,
+          id,
+        ]);
+      }
+      if (id && value.tanggal_lahir) {
+        await pool.execute(`UPDATE karyawan SET tanggal_lahir = STR_TO_DATE(?,'%Y-%m-%dT%H:%i:%s.000Z') WHERE id = ?`, [
+          value.tanggal_lahir,
+          id,
+        ]);
+      }
+      if (id && value.alamat) {
+        await pool.execute(`UPDATE karyawan SET alamat = ? WHERE id = ?`, [
+          value.alamat,
+          id,
+        ]);
+      }
+      if (id && value.email) {
+        await pool.execute(`UPDATE karyawan SET email = ? WHERE id = ?`, [
+          value.email,
+          id,
+        ]);
+      }
+      if (id && value.no_telp) {
+        await pool.execute(`UPDATE karyawan SET no_telp = ? WHERE id = ?`, [
+          value.no_telp,
+          id,
+        ]);
+      }
       return NextResponse.json({
         success: true,
         message: "Berhasil Mengupdate!",
