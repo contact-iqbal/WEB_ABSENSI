@@ -35,7 +35,8 @@ export default function PengaturanPage() {
       section: 'Gaji & Tunjangan'
     },
     {
-      section: 'Backup & Restore'
+      section: 'Backup & Restore',
+      hidesave: true
     },
   ]
   useEffect(() => {
@@ -67,6 +68,32 @@ export default function PengaturanPage() {
       fetchconfig()
     }
   }
+
+  const downloadBackup = async () => {
+    const res = await fetch('/api/admin/database_export', {
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ADMIN_SECRET}`,
+      },
+    });
+
+    if (!res.ok) {
+      alert('Backup failed');
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup-${Date.now().toString()}.sql`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  };
+
 
   return (
     <div className="space-y-6 pt-12">
@@ -323,7 +350,7 @@ export default function PengaturanPage() {
                 </div>
                 <div className="w-full text-black">
                   <h5>Export</h5>
-                  <button className="px-6 py-2 w-full border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                  <button className="px-6 py-2 w-full border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium" onClick={downloadBackup}>
                     Export
                   </button>
                 </div>

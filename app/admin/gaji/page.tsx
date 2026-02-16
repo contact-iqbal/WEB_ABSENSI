@@ -278,7 +278,7 @@ export default function GajiPage() {
                     <td className="px-6 py-4 font-semibold text-gray-800">
                       {formatRupiah(item.gaji_bersih)}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded-full ${
                           item.status_bayar === "sudah_dibayar"

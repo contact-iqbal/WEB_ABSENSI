@@ -184,7 +184,7 @@ export default function AbsensiPage() {
               {absensi.length > 0 ? (
                 absensi.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-800">
+                    <td className="px-6 py-4 text-gray-800 whitespace-nowrap">
                       {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/','-')}
                     </td>
                     <td className="px-6 py-4">
