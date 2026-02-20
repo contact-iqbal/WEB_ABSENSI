@@ -33,6 +33,51 @@ export async function GET(request: NextRequest) {
 
     query += ` ORDER BY a.tanggal DESC, a.created_at DESC`;
 
+    const viewDate = tanggal || new Date().toISOString().split('T')[0];
+
+    // 1. Automatic Izin Realization
+    // Find people who have approved izin for the viewed date but no absensi record yet
+    const [approvedIzin]: any = await pool.execute(`
+      SELECT i.karyawan_id, i.jenis_izin, i.keterangan 
+      FROM izin i
+      WHERE i.status = 'disetujui'
+      AND ? BETWEEN i.tanggal_mulai AND i.tanggal_selesai
+      AND i.karyawan_id NOT IN (SELECT id FROM absensi WHERE tanggal = ?)
+    `, [viewDate, viewDate]);
+
+    for (const item of approvedIzin) {
+      await pool.execute(
+        "INSERT INTO absensi (id, tanggal, status, keterangan) VALUES (?, ?, ?, ?)",
+        [item.karyawan_id, viewDate, item.jenis_izin, `Izin: ${item.jenis_izin} (${item.keterangan})`]
+      );
+    }
+
+    // 2. Automatic Alpha Check (Only for today)
+    if (viewDate === new Date().toISOString().split('T')[0]) {
+      const [config]: any = await pool.execute('SELECT jam_pulang FROM config LIMIT 1');
+      const jamPulang = config[0]?.jam_pulang || '17:00:00';
+      const now = new Date();
+      const currentTime = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+      const [hPulang, mPulang, sPulang] = jamPulang.split(':').map(Number);
+      const pulangTime = hPulang * 3600 + mPulang * 60 + sPulang;
+
+      if (currentTime >= pulangTime) {
+        // Get all employees who don't have attendance today
+        const [missingEmployees]: any = await pool.execute(`
+          SELECT k.id FROM karyawan k
+          WHERE k.jabatan != 'superadmin'
+          AND k.id NOT IN (SELECT id FROM absensi WHERE tanggal = CURDATE())
+        `);
+
+        for (const employee of missingEmployees) {
+          await pool.execute(
+            "INSERT INTO absensi (id, tanggal, status, keterangan) VALUES (?, CURDATE(), 'alpha', 'Alpa (Otomatis)')",
+            [employee.id]
+          );
+        }
+      }
+    }
+
     const [result] = await pool.execute(query, params);
 
     // Get statistics

@@ -12,6 +12,8 @@ import {
   faCheckToSlot,
   faSave,
   faL,
+  faCamera,
+  faSpinner
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -97,9 +99,57 @@ export default function KaryawanPage() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("-");
+  const [uploadingId, setUploadingId] = useState<Number | null>(null);
+
   useEffect(() => {
     fetchkaryawan();
   }, [filterStatus, searchTerm]);
+  useEffect(() => {
+    console.log(pendingUpdate)
+  }, [pendingUpdate])
+
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>, id: Number) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // 5MB limit check
+      if (file.size > 5 * 1024 * 1024) {
+        showError('Gagal', 'Ukuran file terlalu besar (Maksimal 5MB)');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          setUploadingId(id);
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              file: reader.result,
+              folder: 'web_absensi/profile'
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            SetpendingUpdate((prev) => ({
+              ...prev,
+              value: { ...(prev.value ?? {}), profile_picture: data.url },
+            }));
+            showSuccess('Berhasil', 'Foto profil berhasil diunggah (klik Save untuk menyimpan permanently)');
+            fetchkaryawan()
+          } else {
+            showError('Gagal', data.message);
+          }
+        } catch (error) {
+          showError('Error', 'Gagal mengunggah foto');
+        } finally {
+          setUploadingId(null);
+        }
+      };
+    }
+  };
   const fetchkaryawan = async () => {
     const params = new URLSearchParams();
     if (searchTerm) params.append("search", searchTerm);
@@ -171,7 +221,8 @@ export default function KaryawanPage() {
         k.email != pendingUpdate.value?.email ||
         k.no_telp != pendingUpdate.value?.no_telp ||
         k.NIK != pendingUpdate.value?.NIK ||
-        k.gaji_pokok != pendingUpdate.value?.gaji_pokok
+        k.gaji_pokok != pendingUpdate.value?.gaji_pokok ||
+        k.profile_picture != pendingUpdate.value?.profile_picture
       ) {
         handlechange(k.id, pendingUpdate.value);
       }
@@ -418,13 +469,13 @@ export default function KaryawanPage() {
         </div>
 
       </div>
-      <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+      <div className="flex flex-col gap-6 mx-auto">
         {Karyawan.map((k) => {
           const isEditing = editing === k.id;
           return (
             <div
               key={k.id as number}
-              className={`group bg-white border rounded-2xl transition-all duration-300 ${isEditing
+              className={`group bg-white w-full border rounded-2xl transition-all duration-300 ${isEditing
                 ? "border-blue-400 shadow-lg ring-1 ring-blue-100"
                 : "border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
                 }`}
@@ -433,13 +484,34 @@ export default function KaryawanPage() {
               <div className="p-6 border-b border-gray-50 flex flex-col sm:flex-row justify-between items-start gap-4">
                 <div className="flex items-center gap-4">
                   {/* Avatar Placeholder */}
-                  {Karyawan && k.profile_picture ? (
-                    <img className="h-14 w-14 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-inner" src={k.profile_picture.toString()} />
-                  ) : (
-                    <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-inner uppercase">
-                      {k.nama.charAt(0)}
-                    </div>
-                  )}
+                  <div className="relative group/avatar">
+                    {pendingUpdate.id === k.id && pendingUpdate.value?.profile_picture ? (
+                       <img className="h-14 w-14 rounded-full object-cover flex items-center justify-center text-white font-bold text-xl shadow-inner border-2 border-blue-100" src={pendingUpdate.value.profile_picture.toString()} alt="preview" />
+                    ) : k.profile_picture ? (
+                      <img className="h-14 w-14 rounded-full object-cover flex items-center justify-center text-white font-bold text-xl shadow-inner" src={k.profile_picture.toString()} alt={String(k.nama)} />
+                    ) : (
+                      <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-inner uppercase">
+                        {k.nama.charAt(0)}
+                      </div>
+                    )}
+
+                    {isEditing && (
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full cursor-pointer opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleProfilePictureChange(e, k.id)}
+                          disabled={uploadingId === k.id}
+                        />
+                        {uploadingId === k.id ? (
+                          <FontAwesomeIcon icon={faSpinner} className="text-white animate-spin text-lg" />
+                        ) : (
+                          <FontAwesomeIcon icon={faCamera} className="text-white text-lg" />
+                        )}
+                      </label>
+                    )}
+                  </div>
 
                   <div className="space-y-1">
                     {isEditing ? (

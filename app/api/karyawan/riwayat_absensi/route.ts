@@ -3,80 +3,70 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      karyawan_id,
-      bulan,
-      tahun,
-      status,
-      page = 1,
-      limit = 10,
-    } = await request.json();
+    const body = await request.json();
+    const karyawan_id = Number(body.karyawan_id);
+    const bulan = body.bulan ? Number(body.bulan) : null;
+    const tahun = body.tahun ? Number(body.tahun) : null;
+    const status = body.status && body.status !== "Semua Status" ? String(body.status).toLowerCase() : null;
+    const page = Number(body.page) || 1;
+    const limit = Number(body.limit) || 10;
+    const offset = (page - 1) * limit;
 
-    let query = `
-            SELECT * FROM absensi 
-            WHERE id = ?
-        `;
-    const params: any[] = [karyawan_id];
+    // 1. Build Base Filter
+    let filterSql = " WHERE id = ?";
+    let filterParams: any[] = [karyawan_id];
 
     if (bulan) {
-      query += ` AND MONTH(tanggal) = ?`;
-      params.push(bulan);
+      filterSql += " AND MONTH(tanggal) = ?";
+      filterParams.push(bulan);
     }
-
     if (tahun) {
-      query += ` AND YEAR(tanggal) = ?`;
-      params.push(tahun);
+      filterSql += " AND YEAR(tanggal) = ?";
+      filterParams.push(tahun);
+    }
+    if (status) {
+      filterSql += " AND status = ?";
+      filterParams.push(status);
     }
 
-    if (status && status !== "Semua Status") {
-      query += ` AND status = ?`;
-      params.push(status.toLowerCase());
-    }
-
-    query += ` ORDER BY tanggal DESC`;
-
-    // Get total count
-    const countQuery = query.replace("SELECT *", "SELECT COUNT(*) as total");
-    const [countResult]: any = await pool.execute(countQuery, params);
+    // 2. Get Total Count
+    const countQuery = "SELECT COUNT(*) as total FROM absensi" + filterSql;
+    const [countResult]: any = await pool.query(countQuery, filterParams);
     const total = countResult[0].total;
 
-    // Add pagination
-    const offset = (page - 1) * limit;
-    query += ` LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    // 3. Get Main Data
+    const mainQuery = "SELECT * FROM absensi" + filterSql + " ORDER BY tanggal DESC LIMIT ? OFFSET ?";
+    const mainParams = [...filterParams, limit, offset];
+    const [result] = await pool.query(mainQuery, mainParams);
 
-    const [result] = await pool.execute(query, params);
-
-    // Get statistics for the selected period
-    let statsQuery = `
-            SELECT 
-                COUNT(CASE WHEN status IN ('hadir', 'terlambat') THEN 1 END) as hadir,
-                COUNT(CASE WHEN status = 'terlambat' THEN 1 END) as terlambat,
-                COUNT(CASE WHEN status = 'izin' THEN 1 END) as izin,
-                COUNT(CASE WHEN status = 'sakit' THEN 1 END) as sakit,
-                COUNT(CASE WHEN status = 'alpha' THEN 1 END) as alpha
-            FROM absensi 
-            WHERE id = ?
-        `;
-    const statsParams: any[] = [karyawan_id];
-
+    // 4. Get Statistics (always for the selected month/year if provided)
+    let statsSql = " WHERE id = ?";
+    let statsParams: any[] = [karyawan_id];
     if (bulan) {
-      statsQuery += ` AND MONTH(tanggal) = ?`;
+      statsSql += " AND MONTH(tanggal) = ?";
       statsParams.push(bulan);
     }
-
     if (tahun) {
-      statsQuery += ` AND YEAR(tanggal) = ?`;
+      statsSql += " AND YEAR(tanggal) = ?";
       statsParams.push(tahun);
     }
 
-    const [stats]: any = await pool.execute(statsQuery, statsParams);
+    const statsQuery = `
+      SELECT 
+        COUNT(CASE WHEN status IN ('hadir', 'terlambat') THEN 1 END) as hadir,
+        COUNT(CASE WHEN status = 'terlambat' THEN 1 END) as terlambat,
+        COUNT(CASE WHEN status = 'izin' THEN 1 END) as izin,
+        COUNT(CASE WHEN status = 'sakit' THEN 1 END) as sakit,
+        COUNT(CASE WHEN status = 'alpha' THEN 1 END) as alpha
+      FROM absensi ${statsSql}
+    `;
+    const [statsResult]: any = await pool.query(statsQuery, statsParams);
 
     return NextResponse.json(
       {
         success: true,
         result: result,
-        stats: stats[0],
+        stats: statsResult[0],
         pagination: {
           total,
           page,
@@ -86,11 +76,12 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 },
     );
-  } catch (e) {
-    console.log(e);
+  } catch (e: any) {
+    console.error('Database Error:', e);
     return NextResponse.json(
       {
         success: false,
+        message: e.message,
         error: e,
       },
       { status: 500 },

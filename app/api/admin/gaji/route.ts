@@ -86,53 +86,143 @@ export async function POST(request: NextRequest) {
     const { action, bulan, tahun } = await request.json();
 
     if (action === "hitung_otomatis") {
-      // Get all employees
-      const [karyawan]: any = await pool.execute(
-        'SELECT id, gaji_pokok FROM karyawan WHERE jabatan != "superadmin"',
+      // Check if there are any attendance records for this month/year first
+      const [checkAttendance]: any = await pool.execute(
+        'SELECT COUNT(*) as count FROM absensi WHERE MONTH(tanggal) = ? AND YEAR(tanggal) = ?',
+        [bulan, tahun]
       );
+
+      if (checkAttendance[0].count === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Tidak ada data absensi untuk bulan ke ${bulan}, tahun ${tahun}. Kalkulasi gaji tidak dapat dilakukan.`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Get only employees who have attendance records for this specific month/year
+      const [karyawan]: any = await pool.execute(
+        `SELECT DISTINCT k.id, k.gaji_pokok FROM karyawan k
+         JOIN absensi a ON k.id = a.id
+         WHERE k.jabatan != "superadmin"
+         AND MONTH(a.tanggal) = ? AND YEAR(a.tanggal) = ?`,
+        [bulan, tahun]
+      );
+
+      // Get config for calculation
+      const [config]: any = await pool.execute('SELECT jam_masuk, toleransi_telat, tunjangan_makan, tunjangan_transport, potongan_alpha FROM config LIMIT 1');
+      const jamMasukConfig = config[0]?.jam_masuk || '08:00:00';
+      const toleransiTelat = config[0]?.toleransi_telat || 0;
+      const tunjanganMakanPerHari = config[0]?.tunjangan_makan || 0;
+      const tunjanganTransportPerHari = config[0]?.tunjangan_transport || 0;
+      const potonganAlphaPerHari = config[0]?.potongan_alpha || 0;
 
       // Calculate salary for each employee
       for (const k of karyawan) {
         // Check if salary already exists
         const [existing]: any = await pool.execute(
-          "SELECT id FROM gaji WHERE karyawan_id = ? AND bulan = ? AND tahun = ?",
+          "SELECT id, status_bayar FROM gaji WHERE karyawan_id = ? AND bulan = ? AND tahun = ?",
           [k.id, bulan, tahun],
         );
 
         if (existing.length > 0) {
-          continue; // Skip if already exists
+          if (existing[0].status_bayar === 'sudah_dibayar') {
+            continue; // Skip if already paid
+          } else {
+            // Delete existing unpaid record to allow recalculation
+            await pool.execute("DELETE FROM gaji WHERE id = ?", [existing[0].id]);
+          }
         }
 
-        // Count attendance
-        const [attendance]: any = await pool.execute(
-          `SELECT 
-                        COUNT(CASE WHEN status IN ('hadir', 'terlambat') THEN 1 END) as hadir,
-                        COUNT(CASE WHEN status = 'alpha' THEN 1 END) as alpha
-                     FROM absensi 
-                     WHERE id = ? AND MONTH(tanggal) = ? AND YEAR(tanggal) = ?`,
+        // Fetch all attendance for the month to calculate deductions and allowances
+        const [attendanceRecords]: any = await pool.execute(
+          `SELECT status, absen_masuk FROM absensi 
+           WHERE id = ? AND MONTH(tanggal) = ? AND YEAR(tanggal) = ?`,
           [k.id, bulan, tahun],
         );
 
-        const hadirCount = attendance[0].hadir;
-        const alphaCount = attendance[0].alpha;
+        let alphaCount = 0;
+        let totalPotonganTerlambat = 0;
+        let terlambatCount = 0;
+        let daysPresent = 0;
 
-        // Simple calculation: gaji_pokok - (alpha * 100000)
-        const potongan_alpha = alphaCount * 100000;
-        const gaji_bersih = k.gaji_pokok - potongan_alpha;
+        attendanceRecords.forEach((record: any) => {
+          if (record.status === 'alpha') {
+            alphaCount++;
+          } else if (record.status === 'hadir' || record.status === 'terlambat') {
+            daysPresent++;
+            if (record.status === 'terlambat' && record.absen_masuk) {
+              // Calculate minutes late
+              const [hConfig, mConfig] = jamMasukConfig.split(':').map(Number);
+              const [hAbsen, mAbsen] = record.absen_masuk.split(':').map(Number);
+              
+              const minutesConfig = hConfig * 60 + mConfig;
+              const minutesAbsen = hAbsen * 60 + mAbsen;
+              const minutesLate = minutesAbsen - minutesConfig;
+
+              if (minutesLate > 0) {
+                terlambatCount++;
+                // 15.000 per hour (rounded up)
+                const multiplier = Math.ceil(minutesLate / 60);
+                totalPotonganTerlambat += multiplier * 15000;
+              }
+            }
+          }
+        });
+
+        const totalTunjanganMakan = daysPresent * tunjanganMakanPerHari;
+        const totalTunjanganTransport = daysPresent * tunjanganTransportPerHari;
+        const total_tunjangan = totalTunjanganMakan + totalTunjanganTransport;
+
+        const totalPotonganAlpha = alphaCount * potonganAlphaPerHari;
+        let total_potongan = totalPotonganAlpha + totalPotonganTerlambat;
+        
+        // Ensure total deductions don't exceed base salary (prevent negative net salary)
+        if (total_potongan > k.gaji_pokok) {
+          total_potongan = k.gaji_pokok;
+        }
+        
+        const gaji_bersih = k.gaji_pokok + total_tunjangan - total_potongan;
 
         // Insert salary record
         const [gajiResult]: any = await pool.execute(
           `INSERT INTO gaji (karyawan_id, bulan, tahun, gaji_pokok, total_tunjangan, total_potongan, gaji_bersih, status_bayar)
-                     VALUES (?, ?, ?, ?, 0, ?, ?, 'belum_dibayar')`,
-          [k.id, bulan, tahun, k.gaji_pokok, potongan_alpha, gaji_bersih],
+                     VALUES (?, ?, ?, ?, ?, ?, ?, 'belum_dibayar')`,
+          [k.id, bulan, tahun, k.gaji_pokok, total_tunjangan, total_potongan, gaji_bersih],
         );
 
-        // Add potongan if any
-        if (potongan_alpha > 0) {
+        // Add tunjangan records
+        if (totalTunjanganMakan > 0) {
+          await pool.execute(
+            `INSERT INTO tunjangan (gaji_id, jenis_tunjangan, jumlah, keterangan)
+                         VALUES (?, 'Tunjangan Makan', ?, ?)`,
+            [gajiResult.insertId, totalTunjanganMakan, `${daysPresent} hari kerja`],
+          );
+        }
+        if (totalTunjanganTransport > 0) {
+          await pool.execute(
+            `INSERT INTO tunjangan (gaji_id, jenis_tunjangan, jumlah, keterangan)
+                         VALUES (?, 'Tunjangan Transport', ?, ?)`,
+            [gajiResult.insertId, totalTunjanganTransport, `${daysPresent} hari kerja`],
+          );
+        }
+
+        // Add potongan records
+        if (totalPotonganAlpha > 0) {
           await pool.execute(
             `INSERT INTO potongan_gaji (gaji_id, jenis_potongan, jumlah, keterangan)
                          VALUES (?, 'Potongan Alpha', ?, ?)`,
-            [gajiResult.insertId, potongan_alpha, `${alphaCount} hari alpha`],
+            [gajiResult.insertId, totalPotonganAlpha, `${alphaCount} hari alpha`],
+          );
+        }
+
+        if (totalPotonganTerlambat > 0) {
+          await pool.execute(
+            `INSERT INTO potongan_gaji (gaji_id, jenis_potongan, jumlah, keterangan)
+                         VALUES (?, 'Potongan Terlambat', ?, ?)`,
+            [gajiResult.insertId, totalPotonganTerlambat, `${terlambatCount} kali terlambat`],
           );
         }
       }

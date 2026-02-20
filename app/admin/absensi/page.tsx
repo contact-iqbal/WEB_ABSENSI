@@ -83,7 +83,7 @@ export default function AbsensiPage() {
               <FontAwesomeIcon icon={faCheck} className="text-xl" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Hadir</p>
+              <p className="text-sm text-gray-600 font-medium">Hadir tepat waktu</p>
               <h3 className="text-2xl font-bold text-gray-800">
                 {stats.hadir}
               </h3>

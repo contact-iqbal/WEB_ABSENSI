@@ -9,7 +9,10 @@ interface config {
   email_perusahaan?: any,
   jam_masuk?: any,
   jam_pulang?: any,
-  toleransi_telat?: any
+  toleransi_telat?: any,
+  tunjangan_transport?: any,
+  tunjangan_makan?: any,
+  potongan_alpha?: any,
 }
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
@@ -21,7 +24,10 @@ export default function PengaturanPage() {
     email_perusahaan: '',
     jam_masuk: 0,
     jam_pulang: 0,
-    toleransi_telat: 0
+    toleransi_telat: 0,
+    tunjangan_transport: 0,
+    tunjangan_makan: 0,
+    potongan_alpha: 0,
   })
 
   const items = [
@@ -307,6 +313,13 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
+                    defaultValue={Number(configdata?.tunjangan_transport ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        tunjangan_transport: e.target.value
+                      }))
+                    }
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -319,6 +332,13 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
+                    defaultValue={Number(configdata?.tunjangan_makan ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        tunjangan_makan: e.target.value
+                      }))
+                    }
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -331,6 +351,13 @@ export default function PengaturanPage() {
                   <input
                     type="number"
                     placeholder="0"
+                    defaultValue={Number(configdata?.potongan_alpha ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        potongan_alpha: e.target.value
+                      }))
+                    }
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

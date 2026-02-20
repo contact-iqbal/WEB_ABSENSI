@@ -89,12 +89,25 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { id, action, approved_by } = await request.json();
+    const { id, action, approved_by, keterangan, bukti } = await request.json();
 
-    if (action === "cancel") {
+    if (action === "edit") {
+      // Only allow edit if status is pending
+      await pool.execute(
+        `UPDATE izin SET keterangan = ?, bukti = ? WHERE id = ? AND status = 'pending'`,
+        [keterangan, bukti, id],
+      );
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Pengajuan izin berhasil diperbarui",
+        },
+        { status: 200 },
+      );
+    } else if (action === "cancel") {
       // Only allow cancel if status is pending
       await pool.execute(
-        `UPDATE izin SET status = 'ditolak' WHERE id = ? AND status = 'pending'`,
+        `DELETE FROM izin WHERE id = ? AND status = 'pending'`,
         [id],
       );
     } else if (action === "approve") {

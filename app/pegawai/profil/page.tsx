@@ -1,333 +1,394 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faEnvelope, faPhone, faMapMarkerAlt, faBriefcase, faCalendar, faEdit, faL, faSave } from '@fortawesome/free-solid-svg-icons';
+import {
+  faUser, faEnvelope, faPhone, faMapMarkerAlt,
+  faBriefcase, faCalendar, faEdit, faSave,
+  faCamera, faSpinner, faIdCard, faMapPin,
+  faVenusMars, faPray, faTimes
+} from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
+import { showSuccess, showError, showToast, showInfo } from '@/lib/sweetalert';
 
 interface profilestructure {
-  id: Number,
-  NIK: Number,
-  nama: String,
-  acc_created: Date,
-  agama: String,
-  alamat: String,
-  devisi: String,
-  email: String,
-  gaji_pokok: Number,
-  jabatan: String,
-  jenis_kel: String,
-  no_telp: String,
-  profile_picture: any,
-  status: String,
-  tanggal_lahir: Date,
-  tempat_lahir: String
+  id: number,
+  NIK: string,
+  nama: string,
+  acc_created: string,
+  agama: string,
+  alamat: string,
+  devisi: string,
+  email: string,
+  gaji_pokok: number,
+  jabatan: string,
+  jenis_kel: string,
+  no_telp: string,
+  profile_picture: string | null,
+  status: string,
+  tanggal_lahir: string,
+  tempat_lahir: string
 }
 
 export default function ProfilPage() {
-  const [profiledata, Setprofiledata] = useState<profilestructure | null>(null)
-  const [edit, Setedit] = useState(false)
+    const [profiledata, setProfileData] = useState<profilestructure | null>(null);
+    const [edit, setEdit] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [pendingUpdate, setPendingUpdate] = useState<Partial<profilestructure>>({});
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+    useEffect(() => {
+      getdata();
+    }, []);
+  
+    const getdata = async () => {
+      try {
+        const sessionRes = await fetch('/api/auth/session');
+        const session = await sessionRes.json();
+        
+        const res = await fetch('/api/karyawan/personal_data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: session.userId })
+        });
+        const data = await res.json();
+  
+        if (data.success) {
+          const result = data.result[0];
+          setProfileData(result);
+          setPendingUpdate(result);
+          setPreviewImage(result.profile_picture);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+  
+    const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          showError('Gagal', 'Ukuran file terlalu besar (Maksimal 5MB)');
+          return;
+        }
+  
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          setPreviewImage(reader.result as string);
+          setEdit(true); // Auto enter edit mode if picture changed
+        };
+      }
+    };
+  
+    const handleSave = async () => {
+      try {
+        setUploading(true);
+        let finalProfilePicture = pendingUpdate.profile_picture;
+  
+        // Only upload to Cloudinary if a new file was selected
+        if (selectedFile) {
+          const resUpload = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              file: previewImage,
+              folder: 'web_absensi/profile'
+            })
+          });
+          const dataUpload = await resUpload.json();
+          if (dataUpload.success) {
+            finalProfilePicture = dataUpload.url;
+          } else {
+            showError('Gagal', 'Gagal mengunggah foto profil');
+            setUploading(false);
+            return;
+          }
+        }
+  
+        const res = await fetch('/api/karyawan/personal_data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: profiledata?.id,
+            action: 'update',
+            value: { ...pendingUpdate, profile_picture: finalProfilePicture }
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccess('Berhasil', data.message);
+          setEdit(false);
+          setSelectedFile(null);
+          getdata();
+        } else {
+          showError('Gagal', data.message);
+        }
+      } catch (error) {
+        showError('Error', 'Gagal menyimpan perubahan');
+      } finally {
+        setUploading(false);
+      }
+    };
+  
+    const handleCancel = () => {
+      setPendingUpdate(profiledata || {});
+      setPreviewImage(profiledata?.profile_picture || null);
+      setSelectedFile(null);
+      setEdit(false);
+      showInfo('Canceled','Kamu membatalkan aksi')
+    };
+  const aliasesdevisi = (alias: string) => {
+    if (alias === "RT") return "Rizqi Tour";
+    if (alias === "DNA") return "DNA Jaya Group";
+    return "-";
+  };
 
-  function dateformat(date: any) {
-    return new Intl.DateTimeFormat('en-id', {
-      year: 'numeric', month: 'long', day: 'numeric'
-    }).format(new Date(date));
-  }
+  const aliasesstatus = (alias: string) => {
+    if (alias === "pegawai_tetap") return "Karyawan Tetap";
+    return "-";
+  };
 
-  const getdata = async () => {
-    const session = await fetch('/api/auth/session')
-    const sessionresult = await session.json()
-    const datas = await fetch('/api/karyawan/personal_data', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        id: sessionresult.userId,
-      })
-    }
-    )
-    const dataresult = await datas.json()
+  const formatRupiah = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency', currency: 'IDR', minimumFractionDigits: 0
+    }).format(amount);
+  };
 
-    if (dataresult.success) {
-      Setprofiledata(dataresult.result[0])
-    }
-  }
+  if (!profiledata) return <div className="p-12 text-center">Loading...</div>;
 
-  function aliasesdevisi(alias: String) {
-    if (alias === "RT") {
-      return "Rizqi Tour"
-    } else if (alias === "DNA") {
-      return "DNA Jaya Group"
-    } else {
-      return ""
-    }
-  }
-  function aliasesstatus(alias: String) {
-    if (alias === "pegawai_tetap") {
-      return "Karyawan Tetap"
-    } else {
-      return "-"
-    }
-  }
-
-  useEffect(() => {
-    getdata()
-  }, [])
-
-  function formatIndoPhone(input: String) {
-    if (!input) return "";
-    let digits = input.replace(/\D/g, "");
-    if (digits.startsWith("08")) {
-      digits = "62" + digits.slice(1);
-    }
-    if (!digits.startsWith("62")) {
-      return "";
-    }
-
-    const local = digits.slice(2);
-    const p1 = local.slice(0, 3);
-    const p2 = local.slice(3, 7);
-    const p3 = local.slice(7, 11);
-
-    if (!p1 || !p2 || !p3) return "";
-
-    return `+62-${p1}-${p2}-${p3}`;
-  }
-
-  function handleedit() {
-    if (edit) {
-      Setedit(false)
-    } else {
-      Setedit(true)
-    }
-  }
   return (
-    <div className="space-y-6">
-      <div className='pt-12'>
+    <div className="space-y-6 pb-12">
+      <div className='md:pt-12'>
         <h1 className="text-2xl font-bold text-gray-800">Profil Saya</h1>
-        <p className="text-gray-600 mt-1">Informasi data pribadi dan pekerjaan</p>
+        <p className="text-gray-600 mt-1">Kelola informasi pribadi dan foto profil Anda</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="text-center">
-              <div className="w-32 h-32 mx-auto bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white mb-4 overflow-hidden">
-                {profiledata != null &&
-                  (profiledata.profile_picture ? <img src={profiledata && (profiledata.profile_picture)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} size={"4x"} className="text-base" />)
-                }
-              </div>
-              <h3 className="text-xl font-bold text-gray-800">{profiledata ? profiledata.nama : ''}</h3>
-              <p className="text-gray-600 mt-1">{profiledata ? aliasesdevisi(profiledata.devisi) : ''}</p>
-
-              <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faUser} className="text-blue-600" />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+            <div className="relative w-32 h-32 mx-auto mb-6 group">
+              <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 shadow-md">
+                {previewImage ? (
+                  <img src={previewImage} alt="profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-4xl font-bold uppercase">
+                    {profiledata.nama.charAt(0)}
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-gray-500 text-xs">ID Pegawai</p>
-                    <p className="font-medium text-gray-800">{profiledata ? String(profiledata.id) : ''}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCalendar} className="text-green-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-gray-500 text-xs">Tanggal Bergabung</p>
-                    <p className="font-medium text-gray-800">{profiledata ? dateformat(profiledata.acc_created) : ''}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faBriefcase} className="text-orange-600" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-gray-500 text-xs">Status</p>
-                    <p className="font-medium text-gray-800">{profiledata ? aliasesstatus(profiledata.status) : ''}</p>
-                  </div>
-                </div>
+                )}
               </div>
 
-              <button className="w-full mt-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                <FontAwesomeIcon icon={faEdit} className="mr-2" />
-                Edit Foto
-              </button>
+              {edit && (
+                <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <input type="file" className="hidden" accept="image/*" onChange={handleProfilePictureChange} disabled={uploading} />
+                  {uploading ? (
+                    <FontAwesomeIcon icon={faSpinner} className="animate-spin text-white text-2xl" />
+                  ) : (
+                    <FontAwesomeIcon icon={faCamera} className="text-white text-2xl" />
+                  )}
+                </label>
+              )}
+            </div>
+
+
+            <h3 className="text-xl font-bold text-gray-800">{profiledata.nama}</h3>
+            <p className="text-blue-600 font-medium text-sm mt-1 uppercase tracking-wide">
+              {profiledata.jabatan}
+            </p>
+
+            <div className="mt-8 pt-8 border-t border-gray-50 space-y-4">
+              <div className="flex items-center gap-4 text-left">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faIdCard} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">ID Pegawai</p>
+                  <p className="font-semibold text-gray-700">{profiledata.id}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-left">
+                <div className="w-10 h-10 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCalendar} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Bergabung</p>
+                  <p className="font-semibold text-gray-700">{new Date(profiledata.acc_created).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 text-left">
+                <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                  <FontAwesomeIcon icon={faBriefcase} />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Divisi</p>
+                  <p className="font-semibold text-gray-700">{aliasesdevisi(profiledata.devisi)}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">Data Pribadi</h3>
-              <button className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors" onClick={handleedit}>
-                {edit ? 
-                <><FontAwesomeIcon icon={faSave} className="mr-2" />
-                Simpan</>
-                :
-                <>
-                <FontAwesomeIcon icon={faEdit} className="mr-2" />
-                Edit</>
-              }
-              </button>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between bg-white">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <FontAwesomeIcon icon={faUser} className="text-blue-500" />
+                Informasi Pribadi
+              </h3>
+              <div className="flex gap-2">
+                {edit ? (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={uploading}
+                      className="px-6 py-2 rounded-xl font-medium transition-all flex items-center gap-2 bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400"
+                    >
+                      {uploading ? (
+                        <>
+                          <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                          Menyimpan...
+                        </>
+                      ) : (
+                        <>
+                          <FontAwesomeIcon icon={faSave} />
+                          Simpan
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={uploading}
+                      className="px-6 py-2 rounded-xl font-medium transition-all flex items-center gap-2 bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:opacity-50"
+                    >
+                      <FontAwesomeIcon icon={faTimes} />
+                      Batal
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setPendingUpdate(profiledata || {});
+                      setEdit(true);
+                    }}
+                    className="px-6 py-2 rounded-xl font-medium transition-all flex items-center gap-2 text-blue-600 hover:bg-blue-50"
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                    Edit Profil
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Nama Lengkap
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.nama : ''}</p>
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {[
+                { label: 'Nama Lengkap', key: 'nama', icon: faUser },
+                { label: 'NIK', key: 'NIK', icon: faIdCard },
+                { label: 'Tempat Lahir', key: 'tempat_lahir', icon: faMapPin },
+                { label: 'Tanggal Lahir', key: 'tanggal_lahir', icon: faCalendar, type: 'date' },
+                { label: 'Jenis Kelamin', key: 'jenis_kel', icon: faVenusMars, type: 'select', options: [['laki_laki', 'Laki-laki'], ['perempuan', 'Perempuan']] },
+                { label: 'Agama', key: 'agama', icon: faPray, type: 'select', options: [['islam', 'Islam'], ['kristen', 'Kristen'], ['katolik', 'Katolik'], ['hindu', 'Hindu'], ['budha', 'Budha'], ['konghucu', 'Konghucu']] },
+              ].map((field) => (
+                <div key={field.key}>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
+                    {field.label}
+                  </label>
+                  {edit ? (
+                    field.type === 'select' ? (
+                      <select
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                        value={String(pendingUpdate[field.key as keyof profilestructure] || '')}
+                        onChange={(e) => setPendingUpdate(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      >
+                        <option value="">Pilih {field.label}</option>
+                        {field.options?.map(([val, lbl]) => <option key={val} value={val}>{lbl}</option>)}
+                      </select>
+                    ) : (
+                      <input
+                        type={field.type || 'text'}
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                        value={field.type === 'date' ? (pendingUpdate[field.key as keyof profilestructure] ? new Date(String(pendingUpdate[field.key as keyof profilestructure])).toISOString().split('T')[0] : '') : String(pendingUpdate[field.key as keyof profilestructure] || '')}
+                        onChange={(e) => setPendingUpdate(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      />
+                    )
+                  ) : (
+                    <p className="font-semibold text-gray-700">
+                      {field.key === 'jenis_kel' ? (pendingUpdate.jenis_kel === 'laki_laki' ? 'Laki-laki' : 'Perempuan') : field.key === 'tanggal_lahir' ? (new Date(String(pendingUpdate.tanggal_lahir)).toISOString().slice(0,10)) : String(pendingUpdate[field.key as keyof profilestructure] || '-')}
+                    </p>
+                  )}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  NIK
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.NIK) : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Tempat Lahir
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.tempat_lahir : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Tanggal Lahir
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.tanggal_lahir) : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Jenis Kelamin
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.jenis_kel : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Agama
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.agama : ''}</p>
-                </div>
-              </div>
+              ))}
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-600 mb-2">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
                   <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />
-                  Alamat
+                  Alamat Lengkap
                 </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  {edit ?
-                    <input type="text" defaultValue={profiledata ? String(profiledata.alamat) : ''} readOnly={false} className='text-neutral-800 border-2 outline-none w-full' />
-                    :
-                    <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.alamat) : ''}</p>
-                  }
-                </div>
+                {edit ? (
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                    value={pendingUpdate.alamat || ''}
+                    onChange={(e) => setPendingUpdate(prev => ({ ...prev, alamat: e.target.value }))}
+                  />
+                ) : (
+                  <p className="font-semibold text-gray-700">{profiledata.alamat || '-'}</p>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Kontak</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
-                  Email
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.email : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  <FontAwesomeIcon icon={faPhone} className="mr-2" />
-                  Nomor Telepon
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{formatIndoPhone(profiledata ? String(profiledata.no_telp) : '')}</p>
-                </div>
-              </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-50 bg-white">
+              <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <FontAwesomeIcon icon={faEnvelope} className="text-blue-500" />
+                Kontak & Pekerjaan
+              </h3>
             </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-6">Data Pekerjaan</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  ID Pegawai
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? String(profiledata.id) : ''}</p>
+            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Email Address</label>
+                  {edit ? (
+                    <input
+                      type="email"
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                      value={pendingUpdate.email || ''}
+                      onChange={(e) => setPendingUpdate(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="font-semibold text-gray-700">{profiledata.email || '-'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Phone Number</label>
+                  {edit ? (
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                      value={pendingUpdate.no_telp || ''}
+                      onChange={(e) => setPendingUpdate(prev => ({ ...prev, no_telp: e.target.value }))}
+                    />
+                  ) : (
+                    <p className="font-semibold text-gray-700">{profiledata.no_telp || '-'}</p>
+                  )}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Jabatan
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? profiledata.jabatan : ''}</p>
+              <div className="space-y-6 bg-gray-50 p-6 rounded-2xl">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2">Salary Info</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatRupiah(profiledata.gaji_pokok)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Gaji pokok bulanan</p>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Departemen
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? aliasesdevisi(profiledata.devisi) : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Status Kepegawaian
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? aliasesstatus(profiledata.status) : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Tanggal Bergabung
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">{profiledata ? dateformat(profiledata.acc_created) : ''}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Gaji Pokok
-                </label>
-                <div className="px-4 py-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-800 font-medium">Rp 5.000.000</p>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Status Kontrak</p>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                    {aliasesstatus(profiledata.status)}
+                  </span>
                 </div>
               </div>
             </div>

@@ -1,30 +1,251 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faFileAlt, faCheck, faClock, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { useState } from 'react';
-import { showSuccess } from '@/lib/sweetalert';
+import { faPlus, faFileAlt, faCheck, faClock, faTimes, faTrash, faEdit } from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect } from 'react';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+
+interface Izin {
+  id: number;
+  jenis_izin: string;
+  tanggal_mulai: string;
+  tanggal_selesai: string;
+  keterangan: string;
+  status: 'pending' | 'disetujui' | 'ditolak';
+  created_at: string;
+}
 
 export default function IzinPage() {
   const [showForm, setShowForm] = useState(false);
+  const [riwayatIzin, setRiwayatIzin] = useState<Izin[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [existingBukti, setExistingBukti] = useState('');
 
-  const riwayatIzin = [
-    { tanggal: '10-12 Jan 2024', jenis: 'Cuti Tahunan', keterangan: 'Liburan keluarga', status: 'Disetujui', statusColor: 'green' },
-    { tanggal: '5 Jan 2024', jenis: 'Izin Sakit', keterangan: 'Flu', status: 'Disetujui', statusColor: 'green' },
-    { tanggal: '20 Des 2023', jenis: 'Izin Pribadi', keterangan: 'Keperluan keluarga', status: 'Menunggu', statusColor: 'yellow' },
-    { tanggal: '15 Des 2023', jenis: 'Cuti Tahunan', keterangan: 'Liburan', status: 'Ditolak', statusColor: 'red' },
-  ];
+  // Form states
+  const [jenisIzin, setJenisIzin] = useState('izin');
+  const [tanggalMulai, setTanggalMulai] = useState('');
+  const [tanggalSelesai, setTanggalSelesai] = useState('');
+  const [keterangan, setKeterangan] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    fetchSession();
+  }, []);
+
+  const fetchSession = async () => {
+    try {
+      const res = await fetch('/api/auth/session');
+      const data = await res.json();
+      if (data.success) {
+        setUserId(data.userId);
+        fetchRiwayat(data.userId);
+      }
+    } catch (error) {
+      console.error('Error fetching session:', error);
+    }
+  };
+
+  const fetchRiwayat = async (id: number) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/karyawan/izin?karyawan_id=${id}`);
+      const data = await res.json();
+      if (data.success) {
+        setRiwayatIzin(data.result);
+      }
+    } catch (error) {
+      console.error('Error fetching riwayat:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setIsEditing(true);
+    setEditingId(item.id);
+    setJenisIzin(item.jenis_izin);
+    setTanggalMulai(item.tanggal_mulai.split('T')[0]);
+    setTanggalSelesai(item.tanggal_selesai.split('T')[0]);
+    setKeterangan(item.keterangan);
+    setExistingBukti(item.bukti);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelIzin = async (id: number) => {
+    const confirm = await showConfirm('Konfirmasi', 'Apakah Anda yakin ingin membatalkan pengajuan ini?');
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch('/api/karyawan/izin', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action: 'cancel' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showSuccess('Berhasil', 'Pengajuan telah dibatalkan');
+          if (userId) fetchRiwayat(userId);
+        } else {
+          showError('Gagal', data.message);
+        }
+      } catch (error) {
+        showError('Error', 'Terjadi kesalahan sistem');
+      }
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0];
+      // Max 5MB check
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        showError('Gagal', 'Ukuran file terlalu besar (Maksimal 5MB)');
+        e.target.value = ''; // Reset the input
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
+
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              file: reader.result,
+              folder: 'web_absensi/izin'
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            resolve(data.url);
+          } else {
+            reject(data.message);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   const handleSubmitIzin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await showSuccess('Pengajuan Berhasil!', 'Permohonan izin Anda telah diajukan');
-    setShowForm(false);
+    
+    // Date validation logic
+    const start = new Date(tanggalMulai);
+    const end = new Date(tanggalSelesai);
+    const currentYear = new Date().getFullYear();
+
+    if (start > end) {
+      showError('Gagal', 'Tanggal mulai tidak boleh melebihi tanggal selesai');
+      return;
+    }
+
+    if (start.getFullYear() !== currentYear || end.getFullYear() !== currentYear) {
+      showError('Gagal', `Pengajuan hanya diperbolehkan untuk tahun ini (${currentYear})`);
+      return;
+    }
+
+    // Check if trying to apply for today while already checked in
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (tanggalMulai === todayStr && !isEditing) {
+      try {
+        const checkAbsen = await fetch('/api/karyawan/absen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId, requests: 'fetch' })
+        });
+        const absenData = await checkAbsen.json();
+        if (absenData.success && absenData.result.length > 0) {
+          showError('Gagal', 'Anda sudah melakukan absen masuk hari ini. Tidak dapat mengajukan izin untuk hari ini.');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking attendance:', error);
+      }
+    }
+
+    try {
+      setUploading(true);
+      let buktiUrl = existingBukti;
+      
+      if (file) {
+        buktiUrl = await uploadToCloudinary(file);
+      }
+
+      const res = await fetch('/api/karyawan/izin', {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingId,
+          action: isEditing ? 'edit' : undefined,
+          karyawan_id: userId,
+          jenis_izin: jenisIzin,
+          tanggal_mulai: tanggalMulai,
+          tanggal_selesai: tanggalSelesai,
+          keterangan: keterangan,
+          bukti: buktiUrl
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await showSuccess('Berhasil!', data.message);
+        setShowForm(false);
+        resetForm();
+        if (userId) fetchRiwayat(userId);
+      } else {
+        showError('Gagal', data.message);
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      showError('Error', 'Terjadi kesalahan saat mengunggah bukti atau mengirim data');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setJenisIzin('izin');
+    setTanggalMulai('');
+    setTanggalSelesai('');
+    setKeterangan('');
+    setFile(null);
+    setIsEditing(false);
+    setEditingId(null);
+    setExistingBukti('');
+  };
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'pending': return { color: 'yellow', label: 'Menunggu' };
+      case 'disetujui': return { color: 'green', label: 'Disetujui' };
+      case 'ditolak': return { color: 'red', label: 'Ditolak' };
+      default: return { color: 'gray', label: status };
+    }
+  };
+
+  const stats = {
+    total: riwayatIzin.length,
+    disetujui: riwayatIzin.filter(i => i.status === 'disetujui').length,
+    pending: riwayatIzin.filter(i => i.status === 'pending').length
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className='md:pt-12'>
           <h1 className="text-2xl font-bold text-gray-800">Izin & Cuti</h1>
           <p className="text-gray-600 mt-1">Ajukan dan kelola izin atau cuti Anda</p>
         </div>
@@ -33,51 +254,51 @@ export default function IzinPage() {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           <FontAwesomeIcon icon={faPlus} />
-          Ajukan Izin/Cuti
+          {showForm ? 'Batal' : 'Ajukan Izin/Cuti'}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
           <div className="flex items-center gap-4">
             <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center text-blue-600">
               <FontAwesomeIcon icon={faFileAlt} className="text-xl" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Sisa Cuti</p>
-              <h3 className="text-2xl font-bold text-gray-800">12 Hari</h3>
+              <p className="text-sm text-gray-600 font-medium">Total Pengajuan</p>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.total}</h3>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
           <div className="flex items-center gap-4">
             <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center text-green-600">
               <FontAwesomeIcon icon={faCheck} className="text-xl" />
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Disetujui</p>
-              <h3 className="text-2xl font-bold text-gray-800">8</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.disetujui}</h3>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
           <div className="flex items-center gap-4">
             <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center text-yellow-600">
               <FontAwesomeIcon icon={faClock} className="text-xl" />
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Menunggu</p>
-              <h3 className="text-2xl font-bold text-gray-800">1</h3>
+              <h3 className="text-2xl font-bold text-gray-800">{stats.pending}</h3>
             </div>
           </div>
         </div>
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Form Pengajuan Izin/Cuti</h3>
+        <div className="bg-white rounded-lg shadow-md p-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <h3 className="text-lg font-semibold text-gray-800 mb-6">{isEditing ? 'Update Pengajuan Izin/Cuti' : 'Form Pengajuan Izin/Cuti'}</h3>
 
           <form onSubmit={handleSubmitIzin} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,49 +306,50 @@ export default function IzinPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Jenis Izin/Cuti
                 </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>Pilih Jenis</option>
-                  <option>Cuti Tahunan</option>
-                  <option>Izin Sakit</option>
-                  <option>Izin Pribadi</option>
-                  <option>Cuti Menikah</option>
-                  <option>Cuti Melahirkan</option>
+                <select 
+                  className="w-full px-4 text-black py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  value={jenisIzin}
+                  onChange={(e) => setJenisIzin(e.target.value)}
+                  required
+                  disabled={isEditing}
+                >
+                  <option value="izin">Izin</option>
+                  <option value="sakit">Sakit</option>
+                  <option value="cuti">Cuti</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Durasi
-                </label>
-                <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option>1 Hari</option>
-                  <option>2 Hari</option>
-                  <option>3 Hari</option>
-                  <option>4-7 Hari</option>
-                  <option>Lebih dari 7 Hari</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Mulai
-                </label>
-                <input
-                  type="date"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Selesai
-                </label>
-                <input
-                  type="date"
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mulai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={tanggalMulai}
+                    min={`${new Date().getFullYear()}-01-01`}
+                    max={`${new Date().getFullYear()}-12-31`}
+                    onChange={(e) => setTanggalMulai(e.target.value)}
+                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                    disabled={isEditing}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selesai
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={tanggalSelesai}
+                    min={`${new Date().getFullYear()}-01-01`}
+                    max={`${new Date().getFullYear()}-12-31`}
+                    onChange={(e) => setTanggalSelesai(e.target.value)}
+                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                    disabled={isEditing}
+                  />
+                </div>
               </div>
             </div>
 
@@ -138,34 +360,52 @@ export default function IzinPage() {
               <textarea
                 rows={4}
                 required
+                value={keterangan}
+                onChange={(e) => setKeterangan(e.target.value)}
                 placeholder="Jelaskan alasan pengajuan izin/cuti..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Dokumen Pendukung (Opsional)
+                Upload Bukti {isEditing && '(Opsional, biarkan kosong untuk tetap menggunakan bukti lama)'}
               </label>
               <input
                 type="file"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {file ? (
+                <p className="mt-1 text-sm text-gray-500 italic">File baru: {file.name}</p>
+              ) : existingBukti ? (
+                <p className="mt-1 text-sm text-blue-500 italic">Sudah ada bukti terunggah</p>
+              ) : null}
             </div>
 
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
-                onClick={() => setShowForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                onClick={() => { setShowForm(false); resetForm(); }}
+                disabled={uploading}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                disabled={uploading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-blue-400 flex items-center justify-center gap-2"
               >
-                Ajukan Permohonan
+                {uploading ? (
+                  <>
+                    <FontAwesomeIcon icon={faClock} className="animate-spin" />
+                    Mengunggah...
+                  </>
+                ) : (
+                  isEditing ? 'Simpan Perubahan' : 'Ajukan Permohonan'
+                )}
               </button>
             </div>
           </form>
@@ -181,56 +421,67 @@ export default function IzinPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Tanggal
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Jenis
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Keterangan
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Aksi
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keterangan</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {riwayatIzin.map((item, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <p className="font-medium text-gray-800">{item.tanggal}</p>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">{item.jenis}</td>
-                  <td className="px-6 py-4 text-gray-600">{item.keterangan}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 bg-${item.statusColor}-100 text-${item.statusColor}-700 text-xs font-semibold rounded-full`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button className="text-blue-600 hover:text-blue-800 font-medium">
-                      Detail
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {loading ? (
+                <tr><td colSpan={5} className="px-6 py-4 text-center">Loading...</td></tr>
+              ) : riwayatIzin.length > 0 ? (
+                riwayatIzin.map((item) => {
+                  const info = getStatusInfo(item.status);
+                  return (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-800">
+                          {new Date(item.tanggal_mulai).toLocaleDateString('id-ID')}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          s/d {new Date(item.tanggal_selesai).toLocaleDateString('id-ID')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="capitalize text-sm text-gray-600">{item.jenis_izin}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{item.keterangan}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 bg-${info.color}-100 text-${info.color}-700 text-xs font-semibold rounded-full capitalize`}>
+                          {info.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.status === 'pending' && (
+                          <div className="flex gap-3">
+                            <button 
+                              onClick={() => handleEdit(item)}
+                              className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 cursor-pointer"
+                            >
+                              <FontAwesomeIcon icon={faEdit} className="text-xs" />
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleCancelIzin(item.id)}
+                              className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center gap-1 cursor-pointer"
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                              Batalkan
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-500">Belum ada riwayat pengajuan</td></tr>
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h4 className="font-semibold text-blue-800 mb-3">Informasi Penting:</h4>
-        <ul className="space-y-2 text-sm text-blue-700">
-          <li>• Pengajuan cuti tahunan harus dilakukan minimal 3 hari sebelum tanggal cuti</li>
-          <li>• Untuk cuti lebih dari 3 hari, wajib melampirkan surat keterangan</li>
-          <li>• Izin sakit harus disertai surat keterangan dokter jika lebih dari 2 hari</li>
-          <li>• Pengajuan akan diproses maksimal 2 hari kerja</li>
-        </ul>
       </div>
     </div>
   );

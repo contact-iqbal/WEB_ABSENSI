@@ -185,6 +185,12 @@ export async function POST(request: NextRequest) {
           id,
         ]);
       }
+      if (id && value.profile_picture) {
+        await pool.execute(`UPDATE karyawan SET profile_picture = ? WHERE id = ?`, [
+          value.profile_picture,
+          id,
+        ]);
+      }
       return NextResponse.json({
         success: true,
         message: "Berhasil Mengupdate!",

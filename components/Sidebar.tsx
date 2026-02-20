@@ -12,7 +12,8 @@ import {
   faCog,
   faUser,
   IconDefinition,
-  faSignOutAlt
+  faSignOutAlt,
+  faEnvelope
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 interface MenuItem {
@@ -29,6 +30,7 @@ const menuItems: MenuItem[] = [
   { title: 'Akun Karyawan', icon: faUser, href: '/admin/akun' },
   { title: 'Absensi', icon: faCalendarCheck, href: '/admin/absensi' },
   { title: 'Gaji', icon: faMoneyBillWave, href: '/admin/gaji' },
+  { title: 'Izin', icon: faEnvelope, href: '/admin/izin' },
   { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
   { title: 'Pengaturan', icon: faCog, href: '/admin/pengaturan' },
 ];

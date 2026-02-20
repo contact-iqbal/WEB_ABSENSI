@@ -6,10 +6,12 @@ import {
   faClock,
   faCircleCheck,
   faArrowRightToBracket,
-  faArrowRightFromBracket
+  faArrowRightFromBracket,
+  faPeace,
+  faUmbrellaBeach
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
-import { showConfirm, showInfo, showSuccess } from '@/lib/sweetalert';
+import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
 
 interface session {
   success: Boolean,
@@ -43,6 +45,10 @@ export default function PegawaiDashboard() {
   const [currentDate, setCurrentDate] = useState<string>('');
   const [Sessions, setSession] = useState<session | null>(null)
   const [absenhistory, setabsenhistory] = useState<history | null>();
+  const [loading, setLoading] = useState(false);
+  const [isOnLeave, setIsOnLeave] = useState(false);
+  const [leaveInfo, setLeaveInfo] = useState<any>(null);
+
   useEffect(() => {
     storesession()
     configfetch()
@@ -55,11 +61,31 @@ export default function PegawaiDashboard() {
         setSession(sessionresult)
         setabsen(sessionresult.userId)
         getstats(Number(sessionresult.userId))
+        checkTodayLeave(sessionresult.userId)
       }
     } catch (e) {
       console.log(e)
     }
   }
+
+  const checkTodayLeave = async (userId: number) => {
+    try {
+      const res = await fetch(`/api/karyawan/izin?karyawan_id=${userId}`);
+      const data = await res.json();
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayLeave = data.success && data.result.find((i: any) => 
+        i.status === 'disetujui' && 
+        todayStr >= i.tanggal_mulai.split('T')[0] && 
+        todayStr <= i.tanggal_selesai.split('T')[0]
+      );
+      if (todayLeave) {
+        setIsOnLeave(true);
+        setLeaveInfo(todayLeave);
+      }
+    } catch (error) {
+      console.error('Error checking leave:', error);
+    }
+  };
   const configfetch = async () => {
     try {
       const checktime = await fetch('/api/karyawan/config')
@@ -121,7 +147,6 @@ export default function PegawaiDashboard() {
 
       )
       const absendatas = await absendata.json()
-      console.log(absendatas)
       setabsenhistory(absendatas.result)
     } catch (e) {
       console.log(e)
@@ -150,50 +175,74 @@ export default function PegawaiDashboard() {
   }, []);
 
   const handleAbsen = async () => {
-    const now = new Date();
-    const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', });
+    if (!Sessions?.userId) return;
+    
+    try {
+      // Check if there's an approved leave for today
+      const checkIzin = await fetch(`/api/karyawan/izin?karyawan_id=${Sessions.userId}`);
+      const izinData = await checkIzin.json();
+      const todayStr = new Date().toISOString().split('T')[0];
+      const hasIzinToday = izinData.success && izinData.result.some((i: any) => 
+        i.status === 'disetujui' && 
+        todayStr >= i.tanggal_mulai.split('T')[0] && 
+        todayStr <= i.tanggal_selesai.split('T')[0]
+      );
 
-    if (!jamMasuk) {
-      setJamMasuk(time);
-      const islate:boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
-      const inputtodb = await fetch('/api/karyawan/absen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: Sessions?.userId,
-          absen_masuk: time,
-          status: islate ? 'terlambat' : 'hadir',
-          requests: 'jam_masuk'
-        })
+      if (hasIzinToday) {
+        showError('Gagal', 'Anda sedang dalam masa izin/cuti yang telah disetujui.');
+        return;
       }
-      )
-      const resultinputtodb = await inputtodb.json()
-      // console.log(resultinputtodb)
-      // console.log(time)
-      // console.log(islate)
-      await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
-    } else if (!jamKeluar) {
-      if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
-        setJamKeluar(time);
-        const inputtodbkl = await fetch('/api/karyawan/absen', {
+
+      const now = new Date();
+      const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', }).replace(':', '.');
+
+      if (!jamMasuk) {
+        const islate:boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
+        const res = await fetch('/api/karyawan/absen', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             id: Sessions?.userId,
-            absen_keluar: time,
-            requests: 'jam_keluar'
+            absen_masuk: time,
+            status: islate ? 'terlambat' : 'hadir',
+            requests: 'jam_masuk'
           })
+        })
+        const result = await res.json()
+        if (result.success) {
+          await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
+          setabsen(Sessions.userId);
+          getstats(Number(Sessions.userId));
+        } else {
+          showError('Gagal', result.message);
         }
-        )
-        const resultinputtodbkl = await inputtodbkl.json()
-        // console.log(resultinputtodbkl)
-        // console.log(time)
-        await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
+      } else if (!jamKeluar) {
+        if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
+          const res = await fetch('/api/karyawan/absen', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id: Sessions?.userId,
+              absen_keluar: time,
+              requests: 'jam_keluar'
+            })
+          })
+          const result = await res.json()
+          if (result.success) {
+            await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
+            setabsen(Sessions.userId);
+            getstats(Number(Sessions.userId));
+          } else {
+            showError('Gagal', result.message);
+          }
+        }
       }
+    } catch (e) {
+      showError('Error', 'Terjadi kesalahan sistem');
     }
   };
 
@@ -240,59 +289,75 @@ export default function PegawaiDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className='pt-12'>
+      <div className='md:pt-12'>
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Pegawai</h1>
         <p className="text-gray-600 mt-1">{currentDate}</p>
       </div>
 
-      <div className="bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="p-8">
-          <div className="text-center mb-8">
-            {/* <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-800 rounded-full mb-4">
-              <FontAwesomeIcon icon={faClock} className="text-3xl text-white" />
-            </div> */}
-            <div className="text-5xl font-bold text-gray-800 mb-2 tabular-nums">
-              {currentTime}
+          {isOnLeave ? (
+            <div className="text-center py-10">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-100 rounded-full mb-6">
+                <FontAwesomeIcon icon={faUmbrellaBeach} className="text-5xl text-blue-600" />
+              </div>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2">Istirahatlah...</h2>
+              <p className="text-gray-600 text-lg">
+                Anda sedang dalam masa <span className="font-bold text-blue-600 capitalize">{leaveInfo?.jenis_izin}</span> yang telah disetujui.
+              </p>
+              <p className="text-gray-500 text-sm mt-4 italic">"{leaveInfo?.keterangan}"</p>
             </div>
-            <p className="text-gray-600 text-sm">Waktu Saat Ini</p>
-          </div>
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <div className="text-5xl font-bold text-gray-800 mb-2 tabular-nums">
+                  {currentTime}
+                </div>
+                <p className="text-gray-600 text-sm">Waktu Saat Ini</p>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Jam Masuk</span>
-                <FontAwesomeIcon
-                  icon={faArrowRightToBracket}
-                  className={`text-lg ${jamMasuk ? 'text-gray-800' : 'text-gray-300'}`}
-                />
-              </div>
-              <div className={`text-3xl font-bold ${getTimeColor(String(jamMasuk))}`}>
-                {jamMasuk || '--:--'}
-              </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Jam Masuk</span>
+                    <FontAwesomeIcon
+                      icon={faArrowRightToBracket}
+                      className={`text-lg ${jamMasuk ? 'text-gray-800' : 'text-gray-300'}`}
+                    />
+                  </div>
+                  <div className={`text-3xl font-bold ${getTimeColor(String(jamMasuk))}`}>
+                    {jamMasuk || '--:--'}
+                  </div>
+                </div>
 
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Jam Keluar</span>
-                <FontAwesomeIcon
-                  icon={faArrowRightFromBracket}
-                  className={`text-lg ${jamKeluar ? 'text-gray-800' : 'text-gray-300'}`}
-                />
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600">Jam Keluar</span>
+                    <FontAwesomeIcon
+                      icon={faArrowRightFromBracket}
+                      className={`text-lg ${jamKeluar ? 'text-gray-800' : 'text-gray-300'}`}
+                    />
+                  </div>
+                  <div className={`text-3xl font-bold ${jamKeluar ? 'text-gray-800' : 'text-gray-300'}`}>
+                    {jamKeluar || '--:--'}
+                  </div>
+                </div>
               </div>
-              <div className={`text-3xl font-bold ${jamKeluar ? 'text-gray-800' : 'text-gray-300'}`}>
-                {jamKeluar || '--:--'}
-              </div>
-            </div>
-          </div>
 
-          <button
-            onClick={handleAbsen}
-            disabled={buttonStatus.disabled}
-            className={`w-full py-4 ${buttonStatus.bgColor} text-white rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none disabled:cursor-not-allowed disabled:hover:shadow-md flex items-center justify-center gap-3`}
-          >
-            <FontAwesomeIcon icon={buttonStatus.icon} className="text-xl" />
-            {buttonStatus.text}
-          </button>
+              <button
+                onClick={handleAbsen}
+                disabled={buttonStatus.disabled || loading}
+                className={`w-full py-4 ${buttonStatus.bgColor} text-white rounded-xl font-bold text-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 disabled:transform-none disabled:cursor-not-allowed disabled:hover:shadow-md flex items-center justify-center gap-3`}
+              >
+                {loading ? (
+                  <FontAwesomeIcon icon={faClock} className="animate-spin text-xl" />
+                ) : (
+                  <FontAwesomeIcon icon={buttonStatus.icon} className="text-xl" />
+                )}
+                {loading ? 'Processing...' : buttonStatus.text}
+              </button>
+            </>
+          )}
         </div>
       </div>
 

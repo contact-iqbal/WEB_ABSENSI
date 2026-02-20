@@ -79,10 +79,10 @@ export default function GajiPage() {
 
       const result = await response.json();
       if (result.success) {
-        showToast("Sukses", 'success');
+        showToast(result.message, 'success');
         fetchGaji();
       } else {
-        await showError("Error", result.message);
+        await showError("Gagal", result.message);
       }
     } catch (e) {
       await showError("Error", "Terjadi kesalahan saat menghitung gaji");

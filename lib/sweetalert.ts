@@ -70,3 +70,15 @@ export const showToast = (title: string, icon: 'success' | 'error' | 'warning' |
     timerProgressBar: true,
   });
 };
+
+export const showImage = (title: string, imageUrl: string, text?: string) => {
+  return Swal.fire({
+    title,
+    text,
+    imageUrl,
+    imageAlt: title,
+    confirmButtonColor: '#3b82f6',
+    width: 'auto',
+    imageWidth: 600,
+  });
+};
