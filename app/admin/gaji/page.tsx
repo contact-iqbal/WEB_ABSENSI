@@ -39,6 +39,7 @@ export default function GajiPage() {
   const [tahun, setTahun] = useState(new Date().getFullYear());
   const [filterStatus, setFilterStatus] = useState("Semua Status");
   const [searchTerm, setSearchTerm] = useState("");
+  const [iscalculated, setcalculated] = useState(false)
 
   useEffect(() => {
     fetchGaji();
@@ -60,6 +61,7 @@ export default function GajiPage() {
     if (result.success) {
       setGajiList(result.result);
       setStats(result.stats);
+      setcalculated(result.iscalculated)
     }
   };
 
@@ -77,7 +79,7 @@ export default function GajiPage() {
 
       const result = await response.json();
       if (result.success) {
-        await showToast("Sukses", 'success');
+        showToast("Sukses", 'success');
         fetchGaji();
       } else {
         await showError("Error", result.message);
@@ -147,7 +149,7 @@ export default function GajiPage() {
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
           >
             <FontAwesomeIcon icon={faSync} />
-            Hitung Otomatis
+            {iscalculated ? 'Hitung ulang' : 'Hitung Otomatis'}
           </button>
         </div>
       </div>
@@ -280,11 +282,10 @@ export default function GajiPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          item.status_bayar === "sudah_dibayar"
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${item.status_bayar === "sudah_dibayar"
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
-                        }`}
+                          }`}
                       >
                         {item.status_bayar === "sudah_dibayar"
                           ? "Sudah Dibayar"

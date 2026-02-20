@@ -5,12 +5,28 @@ import { json } from "stream/consumers";
 
 export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const devisi = searchParams.get("devisi");
+    const search = searchParams.get("search");
+
+    let query = `SELECT * FROM karyawan WHERE jabatan != "superadmin"`
+    const params: any[] = [];
+
+    if (search) {
+      query += ` AND nama LIKE ?`;
+      params.push(`%${search}%`);
+    }
+    if (devisi && devisi != '-') {
+      query += ` AND devisi = ?`;
+      params.push(`${devisi}`);
+    }
     const [result] = await pool.execute(
-      'SELECT * FROM karyawan WHERE jabatan != "superadmin"',
+      query,params
     );
     return NextResponse.json(
       {
         success: true,
+        debug: {query: query, params: params, devisi: devisi},
         result: result,
       },
       { status: 200 },
@@ -154,6 +170,18 @@ export async function POST(request: NextRequest) {
       if (id && value.no_telp) {
         await pool.execute(`UPDATE karyawan SET no_telp = ? WHERE id = ?`, [
           value.no_telp,
+          id,
+        ]);
+      }
+      if (id && value.NIK) {
+        await pool.execute(`UPDATE karyawan SET NIK = ? WHERE id = ?`, [
+          value.NIK,
+          id,
+        ]);
+      }
+      if (id && value.gaji_pokok) {
+        await pool.execute(`UPDATE karyawan SET gaji_pokok = ? WHERE id = ?`, [
+          value.gaji_pokok,
           id,
         ]);
       }

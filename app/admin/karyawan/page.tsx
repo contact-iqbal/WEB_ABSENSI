@@ -22,10 +22,11 @@ import {
   showInfo,
   showSuccess,
 } from "@/lib/sweetalert";
-import { aliasesdevision, aliasesgender, formatIndoPhone } from "@/lib/aliases";
+import { aliasesdevision, aliasesgender, aliasesstatus, formatIndoPhone } from "@/lib/aliases";
 
 interface karyawan {
-  NIK: any;
+  gaji_pokok: string;
+  NIK: string;
   no_telp: string;
   email: string;
   alamat: string;
@@ -46,6 +47,7 @@ interface pendingUpdate {
   value?: pendingUpdateValue;
 }
 interface pendingUpdateValue {
+  gaji_pokok?: string;
   no_telp?: string;
   email?: string;
   alamat?: string;
@@ -93,11 +95,16 @@ export default function KaryawanPage() {
       profile_picture: '',
     },
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("-");
   useEffect(() => {
     fetchkaryawan();
-  }, []);
+  }, [filterStatus, searchTerm]);
   const fetchkaryawan = async () => {
-    const responses = await fetch("/api/admin/karyawan");
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
+    if (filterStatus !== "-") params.append("devisi", filterStatus);
+    const responses = await fetch(`/api/admin/karyawan?${params.toString()}`);
     const result = await responses.json();
 
     if (result.success) {
@@ -160,9 +167,11 @@ export default function KaryawanPage() {
         k.agama != pendingUpdate.value?.agama ||
         k.tempat_lahir != pendingUpdate.value?.tempat_lahir ||
         k.tanggal_lahir != pendingUpdate.value?.tanggal_lahir ||
-        k.alamat != pendingUpdate.value?.alamat || 
-        k.email != pendingUpdate.value?.email || 
-        k.no_telp != pendingUpdate.value?.no_telp
+        k.alamat != pendingUpdate.value?.alamat ||
+        k.email != pendingUpdate.value?.email ||
+        k.no_telp != pendingUpdate.value?.no_telp ||
+        k.NIK != pendingUpdate.value?.NIK ||
+        k.gaji_pokok != pendingUpdate.value?.gaji_pokok
       ) {
         handlechange(k.id, pendingUpdate.value);
       }
@@ -185,6 +194,7 @@ export default function KaryawanPage() {
           devisi: '',
           status: '',
           profile_picture: '',
+          gaji_pokok: ''
         },
       });
     } else {
@@ -206,8 +216,9 @@ export default function KaryawanPage() {
           tempat_lahir: k.tempat_lahir,
           agama: k.agama,
           jenis_kel: k.jenis_kel,
-          NIK: k.nik,
-          profile_picture: k.profile_picture
+          NIK: k.NIK,
+          profile_picture: k.profile_picture,
+          gaji_pokok: k.gaji_pokok
         },
       });
     }
@@ -392,13 +403,16 @@ export default function KaryawanPage() {
               <input
                 type="text"
                 placeholder="Cari karyawan..."
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <select className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option>Semua Devisi</option>
-              <option>DNA Jaya Group</option>
-              <option>Rizqi Tour</option>
+            <select className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value={'-'}>Semua Devisi</option>
+              <option value={'DNA'}>DNA Jaya Group</option>
+              <option value={'RT'}>Rizqi Tour</option>
             </select>
           </div>
         </div>
@@ -450,7 +464,21 @@ export default function KaryawanPage() {
                         ID: {k.id.toString()}
                       </span>
                       <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                        {k.NIK && k.NIK.toString() || "No NIK"}
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            className="block text-neutral-700 w-full text-xm font-semibold border border-blue-300 rounded-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={String(pendingUpdate.value?.NIK ?? "")}
+                            onChange={(e) =>
+                              SetpendingUpdate((prev) => ({
+                                ...prev,
+                                value: { ...(prev.value ?? {}), NIK: e.target.value },
+                              }))
+                            }
+                          />
+                        ) : (
+                          k.NIK && k.NIK.toString() || "No NIK"
+                        )}
                       </span>
                     </div>
                   </div>
@@ -646,11 +674,12 @@ export default function KaryawanPage() {
                           }
                         >
                           <option value="default">-</option>
-                          <option value="pegawai_tetap">Permanent</option>
+                          <option value="pegawai_tetap">Permanen</option>
+                          <option value="pegawai_sementara">Sementara</option>
                         </select>
                       ) : (
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${k.status === 'pegawai_tetap' ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
-                          {k.status === "default" ? "UNSET" : "PERMANENT"}
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${k.status === 'pegawai_tetap' ? 'bg-green-100 text-green-700' : k.status === 'pegawai_sementara' ? 'bg-orange-100 text-orange-700' : 'bg-gray-200 text-gray-600'}`}>
+                          {k.status === "default" ? "Not Set" : aliasesstatus(k.status)}
                         </span>
                       )}
                     </div>
@@ -692,11 +721,29 @@ export default function KaryawanPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Salary</p>
-                      <p className="text-sm font-bold text-gray-800">Rp 0.000.000</p>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          className="block text-neutral-700 w-full text-lg font-semibold border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          value={String(pendingUpdate.value?.gaji_pokok ?? "")}
+                          onChange={(e) =>
+                            SetpendingUpdate((prev) => ({
+                              ...prev,
+                              value: { ...(prev.value ?? {}), gaji_pokok: e.target.value },
+                            }))
+                          }
+                        />
+                      ) : (
+                        <p className="text-sm font-bold text-gray-800">{k.gaji_pokok && new Intl.NumberFormat('id-ID', {
+                          style: 'currency',
+                          currency: 'IDR',
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }).format(Number(k.gaji_pokok)) || "Not Set"}</p>
+                      )}
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
           );

@@ -10,7 +10,9 @@ export function aliasesdevision(alias: String) {
 
 export function aliasesstatus(alias: String) {
     if (alias === "pegawai_tetap") {
-        return "Karyawan Tetap";
+        return "Permanen";
+    } else if (alias === "pegawai_sementara") {
+        return "Sementara";
     } else {
         return "";
     }

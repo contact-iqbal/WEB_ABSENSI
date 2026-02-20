@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
     query += ` ORDER BY g.tahun DESC, g.bulan DESC, g.created_at DESC`;
 
     const [result] = await pool.execute(query, params);
+    const calculated: any = await pool.execute(query, params)
+    const iscalculated = calculated[0].length > 1
 
     // Get statistics
     const currentMonth = bulan || new Date().getMonth() + 1;
@@ -63,6 +65,7 @@ export async function GET(request: NextRequest) {
         success: true,
         result: result,
         stats: stats[0],
+        iscalculated: iscalculated,
       },
       { status: 200 },
     );
