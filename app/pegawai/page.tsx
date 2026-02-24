@@ -73,10 +73,20 @@ export default function PegawaiDashboard() {
       const res = await fetch(`/api/karyawan/izin?karyawan_id=${userId}`);
       const data = await res.json();
       const todayStr = new Date().toISOString().split('T')[0];
-      const todayLeave = data.success && data.result.find((i: any) => 
-        i.status === 'disetujui' && 
-        todayStr >= i.tanggal_mulai.split('T')[0] && 
-        todayStr <= i.tanggal_selesai.split('T')[0]
+      const todayLeave = data.success && data.result.find((i: any) =>
+        i.status === 'disetujui' &&
+        todayStr >= new Date(i.tanggal_mulai).toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Jakarta',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })[0] &&
+        todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Jakarta',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })[0]
       );
       if (todayLeave) {
         setIsOnLeave(true);
@@ -176,16 +186,26 @@ export default function PegawaiDashboard() {
 
   const handleAbsen = async () => {
     if (!Sessions?.userId) return;
-    
+
     try {
       // Check if there's an approved leave for today
       const checkIzin = await fetch(`/api/karyawan/izin?karyawan_id=${Sessions.userId}`);
       const izinData = await checkIzin.json();
       const todayStr = new Date().toISOString().split('T')[0];
-      const hasIzinToday = izinData.success && izinData.result.some((i: any) => 
-        i.status === 'disetujui' && 
-        todayStr >= i.tanggal_mulai.split('T')[0] && 
-        todayStr <= i.tanggal_selesai.split('T')[0]
+      const hasIzinToday = izinData.success && izinData.result.some((i: any) =>
+        i.status === 'disetujui' &&
+        todayStr >= new Date(i.tanggal_mulai).toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Jakarta',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })[0] &&
+        todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
+          timeZone: 'Asia/Jakarta',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })[0]
       );
 
       if (hasIzinToday) {
@@ -197,7 +217,7 @@ export default function PegawaiDashboard() {
       const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', }).replace(':', '.');
 
       if (!jamMasuk) {
-        const islate:boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
+        const islate: boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
         const res = await fetch('/api/karyawan/absen', {
           method: 'POST',
           headers: {
@@ -212,7 +232,7 @@ export default function PegawaiDashboard() {
         })
         const result = await res.json()
         if (result.success) {
-          await showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
+          showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
           setabsen(Sessions.userId);
           getstats(Number(Sessions.userId));
         } else {
@@ -394,14 +414,14 @@ export default function PegawaiDashboard() {
         </div>
 
         <div className="space-y-3">
-          {absenhistory?.history.slice(0,5).map((i,index) => (
+          {absenhistory?.history.slice(0, 5).map((i, index) => (
             <div
               key={index}
               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-100"
             >
               <div>
-                <p className="font-medium text-gray-800">{new Date(i.tanggal).toLocaleDateString('id-ID',{ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                <p className="text-sm text-gray-500 mt-1">{i.absen_masuk != null && String(i.absen_masuk).replaceAll(':','.').slice(0,5)} - {i.absen_keluar != null && String(i.absen_keluar).replaceAll(':','.').slice(0,5)}</p>
+                <p className="font-medium text-gray-800">{new Date(i.tanggal).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-sm text-gray-500 mt-1">{i.absen_masuk != null && String(i.absen_masuk).replaceAll(':', '.').slice(0, 5)} - {i.absen_keluar != null && String(i.absen_keluar).replaceAll(':', '.').slice(0, 5)}</p>
               </div>
               <span className="px-4 py-1.5 bg-gray-800 text-white text-xs font-semibold rounded-full capitalize">
                 {i.status}

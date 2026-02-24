@@ -1,6 +1,8 @@
 'use client'
-import { showSuccess } from "@/lib/sweetalert";
-import { useEffect, useState } from "react";
+import { showInfo, showSuccess } from "@/lib/sweetalert";
+import { faTrash, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 
 interface config {
   nama_perusahaan: String,
@@ -13,6 +15,7 @@ interface config {
   tunjangan_transport?: any,
   tunjangan_makan?: any,
   potongan_alpha?: any,
+  potongan_terlambat?: any,
 }
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
@@ -28,7 +31,10 @@ export default function PengaturanPage() {
     tunjangan_transport: 0,
     tunjangan_makan: 0,
     potongan_alpha: 0,
+    potongan_terlambat: 0,
   })
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploaded, setuploaded] = useState<{ file: File | null, fileName: string, isuploaded: boolean }>({ file: null, fileName: '', isuploaded: false });
 
   const items = [
     {
@@ -42,7 +48,6 @@ export default function PengaturanPage() {
     },
     {
       section: 'Backup & Restore',
-      hidesave: true
     },
   ]
   useEffect(() => {
@@ -99,6 +104,12 @@ export default function PengaturanPage() {
 
     window.URL.revokeObjectURL(url);
   };
+  const handlechangefile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setuploaded({ file: file, fileName: file.name, isuploaded: true });
+    }
+  }
 
 
   return (
@@ -361,6 +372,24 @@ export default function PengaturanPage() {
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-800">Potongan Terlambat</p>
+                    <p className="text-sm text-gray-600">Per Menit</p>
+                  </div>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    defaultValue={Number(configdata?.potongan_terlambat ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        potongan_terlambat: e.target.value
+                      }))
+                    }
+                    className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           }
@@ -373,7 +402,28 @@ export default function PengaturanPage() {
               <div className="space-y-4 grid grid-cols-2 gap-4 justify-end justify-items-end">
                 <div className="w-full text-black">
                   <h5>Import</h5>
-                  <input type="file" className="px-6 py-2 w-full border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium" title="Upload" accept="sql" />
+                  <input type="file" className="hidden" title="Upload" accept=".sql" ref={fileInputRef} onChange={handlechangefile} />
+                  <div className="relative flex flex-row">
+                    <button className={`w-full px-6 py-2 border border-gray-300 text-gray-700 ${uploaded.isuploaded ? "rounded-tl-lg rounded-bl-lg" : "rounded-lg"} hover:bg-gray-50 transition-colors font-medium`} onClick={() => {
+                      fileInputRef.current?.click();
+                    }}>
+                      {uploaded.isuploaded ? 'Import Ulang' : 'Import'}
+                    </button>
+                    {uploaded.isuploaded ? (
+                      <>
+                        <p className="absolute top-10 left-0">{uploaded.fileName}</p>
+                        <button className={`w-fit bg-red-500 hover:bg-red-700 ${uploaded.isuploaded ? "rounded-tr-lg rounded-br-lg" : ""} text-white px-3 py-2`} onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = '';
+                          }
+                          setuploaded({ file: null, fileName: '', isuploaded: false });
+                        }}>
+                          <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                      </>
+                    ) : ''}
+
+                  </div>
                 </div>
                 <div className="w-full text-black">
                   <h5>Export</h5>
@@ -384,12 +434,30 @@ export default function PengaturanPage() {
               </div>
             </div>
           }
+          {uploaded.isuploaded ?
+            <p className="text-black bg-yellow-100/90 py-2 px-4 rounded-lg">
+              <FontAwesomeIcon icon={faWarning} className="text-neutral-700" />
+              Tekan "Simpan Perubahan" untuk mengganti database dengan file yang di upload
+            </p>
+            :
+            ''
+          }
           <div className="flex justify-end gap-3">
             <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
               Batal
             </button>
             <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              onClick={() => (sendupdate())}
+              onClick={() => {
+                if (uploaded.isuploaded) {
+                  showInfo('info wirr', `Info mokel wir`)
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                  setuploaded({ file: null, fileName: '', isuploaded: false });
+                } else {
+                  sendupdate()
+                }
+              }}
             >
               Simpan Perubahan
             </button>

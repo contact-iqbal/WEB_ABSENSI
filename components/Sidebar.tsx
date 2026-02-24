@@ -24,23 +24,22 @@ interface MenuItem {
 }
 import { showConfirm } from '@/lib/sweetalert';
 
-const menuItems: MenuItem[] = [
-  { title: 'Dashboard', icon: faChartLine, href: '/admin' },
-  { title: 'Data Karyawan', icon: faUsers, href: '/admin/karyawan' },
-  { title: 'Akun Karyawan', icon: faUser, href: '/admin/akun' },
-  { title: 'Absensi', icon: faCalendarCheck, href: '/admin/absensi' },
-  { title: 'Gaji', icon: faMoneyBillWave, href: '/admin/gaji' },
-  { title: 'Izin', icon: faEnvelope, href: '/admin/izin' },
-  { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
-  { title: 'Pengaturan', icon: faCog, href: '/admin/pengaturan' },
-];
-
 interface AdminSidebarProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
+  const menuItems: MenuItem[] = [
+    { title: 'Dashboard', icon: faChartLine, href: '/admin' },
+    { title: 'Data Karyawan', icon: faUsers, href: '/admin/karyawan' },
+    { title: 'Akun Karyawan', icon: faUser, href: '/admin/akun' },
+    { title: 'Absensi', icon: faCalendarCheck, href: '/admin/absensi' },
+    { title: 'Gaji', icon: faMoneyBillWave, href: '/admin/gaji' },
+    { title: 'Izin', icon: faEnvelope, href: '/admin/izin' },
+    { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
+    { title: 'Pengaturan', icon: faCog, href: '/admin/pengaturan' },
+  ];
   const pathname = usePathname();
   const router = useRouter();
   const logout = async () => {
@@ -66,7 +65,7 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
 
       if (result.success) {
         setAuthResult(result);
-        if (result.accountAccess != 'admin') {
+        if (result.accountAccess != 'owner' && result.accountAccess != 'hrd') {
           router.push('/pegawai');
         }
       }
@@ -74,6 +73,12 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
       console.error('Auth check error:', error);
     }
   };
+  let filteredforhrd;
+  if (authResult === null) {
+    filteredforhrd = [{ title: 'Dashboard', icon: faChartLine, href: '/admin' },]
+  } else {
+    filteredforhrd = authResult && authResult.accountAccess === 'hrd' ? menuItems.filter(item => ['Dashboard', 'Absensi', 'Izin'].includes(item.title)) : menuItems
+  }
 
   return (
     <>
@@ -87,12 +92,12 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
         } lg:translate-x-0`}>
         <div className="p-4 border-b border-gray-700">
           <h1 className="text-xl font-bold">Sistem Absensi</h1>
-          <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+          <p className="text-xs text-gray-400 mt-1">Selamat datang {authResult && authResult.username}, di Admin Panel</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-3">
-            {menuItems.map((item) => {
+            {filteredforhrd.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <li key={item.href}>

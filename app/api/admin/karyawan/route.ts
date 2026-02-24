@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
   try {
+    const requestBody = await request.json();
+    console.log("--- DEBUG: Incoming POST request body ---", requestBody);
     const {
       id,
       action,
@@ -54,9 +56,27 @@ export async function POST(request: NextRequest) {
       jabatan,
       devisi,
       status,
-    } = await request.json();
+      NIK,
+      tempat_lahir,
+      tanggal_lahir,
+      jenis_kel,
+      agama,
+      alamat,
+      email,
+      no_telp,
+      gaji_pokok,
+    } = requestBody;
 
     if (action == "create") {
+      const body = { username, password, nama, jabatan, devisi, status, NIK, tempat_lahir, tanggal_lahir, jenis_kel, agama, alamat, email, no_telp, gaji_pokok };
+      console.log("--- DEBUG: Received raw body for create action ---");
+      console.log(body);
+
+      // Check for required fields
+      if (!username || !password) {
+        return NextResponse.json({ error: "Username dan password harus diisi" }, { status: 400 });
+      }
+      
       // Check if username already exists
       const [existingUser]: any = await pool.execute(
         "SELECT id FROM users WHERE username = ?",
@@ -65,16 +85,49 @@ export async function POST(request: NextRequest) {
 
       if (existingUser.length > 0) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "Username sudah digunakan",
-          },
+          { success: false, message: "Username sudah digunakan" },
           { status: 400 },
         );
       }
 
+      // Sanitize and set defaults
+      const s_nama = nama || username;
+      let s_jabatan = jabatan || 'karyawan';
+      let s_devisi = devisi || 'default';
+      let s_status = status || 'default';
+      const s_NIK = NIK || 0;
+      const s_tempat_lahir = tempat_lahir || null;
+      const s_tanggal_lahir = tanggal_lahir || null;
+      const s_jenis_kel = jenis_kel || 'default';
+      const s_agama = agama || 'default';
+      const s_alamat = alamat || null;
+      const s_email = email || null;
+      const s_no_telp = no_telp || null;
+      const s_gaji_pokok = gaji_pokok || 0;
+      if (s_devisi === 'DNA Jaya Group') {
+        s_devisi = 'DNA'
+      } else if (s_devisi === 'Rizqi Tour') {
+        s_devisi = 'RT'
+      } else {
+        s_devisi = 'default'
+      }
+      s_jabatan = String(s_jabatan).toLowerCase()
+      s_status = String(s_status).toLowerCase().replaceAll(' ', "_")
+      
+      const sanitized_data = {s_nama, s_jabatan, s_devisi, s_status, s_NIK, s_tempat_lahir, s_tanggal_lahir, s_jenis_kel, s_agama, s_alamat, s_email, s_no_telp, s_gaji_pokok};
+      console.log("--- DEBUG: Sanitized data before insert ---");
+      console.log(sanitized_data);
+
       // Hash password
-      const hashedPassword = await hashPassword(password);
+      // const hashedPassword = await hashPassword(password);
+      let hashedPassword
+      if (String(password).startsWith('$')) {
+        console.log('password already hashed using original')
+        hashedPassword = password
+      } else {
+        console.log('password not hashed, hashing')
+        hashedPassword = await hashPassword(password);
+      }
 
       // Insert into users table
       const [userResult]: any = await pool.execute(
@@ -83,13 +136,23 @@ export async function POST(request: NextRequest) {
       );
 
       const newUserId = userResult.insertId;
+      console.log(`--- DEBUG: Created user with ID: ${newUserId} ---`);
 
       // Insert into karyawan table
-      await pool.execute(
-        `INSERT INTO karyawan (id, nama, jabatan, devisi, status, profile_picture, NIK, gaji_pokok) 
-                 VALUES (?, ?, ?, ?, ?, '', 0, 0)`,
-        [newUserId, nama, jabatan, devisi, status],
-      );
+      try {
+        await pool.execute(
+          `INSERT INTO karyawan (id, nama, jabatan, devisi, status, NIK, tempat_lahir, tanggal_lahir, jenis_kel, agama, alamat, email, no_telp, gaji_pokok) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [newUserId, s_nama, s_jabatan, s_devisi, s_status, s_NIK, s_tempat_lahir, s_tanggal_lahir, s_jenis_kel, s_agama, s_alamat, s_email, s_no_telp, s_gaji_pokok],
+        );
+        console.log(`--- DEBUG: Successfully inserted data into karyawan for ID: ${newUserId} ---`);
+      } catch (dbError) {
+        console.error("--- DATABASE ERROR on karyawan insert ---", dbError);
+        // Optionally, delete the user that was just created to avoid orphaned users
+        await pool.execute("DELETE FROM users WHERE id = ?", [newUserId]);
+        console.log(`--- DEBUG: Rolled back user creation for ID: ${newUserId} ---`);
+        return NextResponse.json({ error: "Database error inserting employee data.", details: dbError }, { status: 500 });
+      }
 
       return NextResponse.json({
         success: true,
@@ -98,11 +161,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action == "update") {
-      if (!id && !value) {
+      if (!id && !value && id != 1) {
         return NextResponse.json(
           {
             success: false,
-            error: "Update dibatalkan",
+            error: "Update dibatalkan karena isi kosong atau id = 1",
           },
           { status: 400 },
         );

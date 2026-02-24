@@ -2,7 +2,6 @@
 
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import 'animate.css'
 import { useState } from 'react';
 
 export default function DashboardLayout({

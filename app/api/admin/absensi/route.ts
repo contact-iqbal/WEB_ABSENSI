@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     for (const item of approvedIzin) {
       await pool.execute(
         "INSERT INTO absensi (id, tanggal, status, keterangan) VALUES (?, ?, ?, ?)",
-        [item.karyawan_id, viewDate, item.jenis_izin, `Izin: ${item.jenis_izin} (${item.keterangan})`]
+        [item.karyawan_id, viewDate, item.jenis_izin, `${item.jenis_izin}: ${item.keterangan}`]
       );
     }
 
@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
       absen_keluar,
       status,
       keterangan,
+      override
     } = await request.json();
 
     // Check if attendance already exists
@@ -136,12 +137,25 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-
-    await pool.execute(
-      `INSERT INTO absensi (id, tanggal, absen_masuk, absen_keluar, status, keterangan) 
+    if (override.length > 0) {
+      let absn_klr
+      if (absen_keluar === ''){
+        absn_klr = null
+      } else {
+        absn_klr = absen_keluar
+      }
+      await pool.execute(
+        `INSERT INTO absensi (id, tanggal, absen_masuk, absen_keluar, status, keterangan, created_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [karyawan_id, tanggal, absen_masuk, absn_klr, status, keterangan, override],
+      );
+    } else {
+      await pool.execute(
+        `INSERT INTO absensi (id, tanggal, absen_masuk, absen_keluar, status, keterangan) 
              VALUES (?, ?, ?, ?, ?, ?)`,
-      [karyawan_id, tanggal, absen_masuk, absen_keluar, status, keterangan],
-    );
+        [karyawan_id, tanggal, absen_masuk, absen_keluar, status, keterangan],
+      );
+    }
 
     return NextResponse.json(
       {

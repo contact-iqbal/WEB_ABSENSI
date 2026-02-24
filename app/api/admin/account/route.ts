@@ -6,7 +6,7 @@ import { json } from "stream/consumers";
 export async function GET(request: NextRequest) {
   try {
     const [result] = await pool.execute(
-      'SELECT * FROM users WHERE type != "admin"',
+      'SELECT * FROM users WHERE type != "owner"',
     );
     return NextResponse.json(
       {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 }
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, id, action } = await request.json();
+    const { username, password, id, action, ids } = await request.json();
     if (action == "create") {
       console.log("create account");
       if (!username || !password) {
@@ -84,10 +84,48 @@ export async function POST(request: NextRequest) {
         "SELECT nama FROM karyawan WHERE id = ?",
         [id],
       );
+      const nama = usernamecheck.length > 0 ? usernamecheck[0].nama : "Tidak diketahui";
       await pool.execute("DELETE FROM users WHERE id = ?", [id]);
       return NextResponse.json({
         success: true,
-        message: `Akun dengan Nama "${usernamecheck[0].nama}" dan id:${id} telah dihapus!`,
+        message: `Akun dengan Nama "${nama}" dan id:${id} telah dihapus!`,
+      });
+    } else if (action == "mass_delete") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json(
+          { error: "ID tidak valid" },
+          { status: 400 },
+        );
+      }
+      
+      // Filter out admin ID
+      const filteredIds = ids.filter(id => id != 1);
+      if (filteredIds.length === 0) {
+        return NextResponse.json(
+          { error: "Tidak ada akun yang dapat dihapus" },
+          { status: 400 },
+        );
+      }
+
+      const [checkammount]: any = await pool.execute(
+        'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "superadmin"',
+      );
+      
+      if (checkammount[0].total_karyawan <= filteredIds.length) {
+        return NextResponse.json(
+          { error: "Sisakan minimal 1 akun karyawan!" },
+          { status: 400 },
+        );
+      }
+
+      await pool.execute(
+        `DELETE FROM users WHERE id IN (${filteredIds.map(() => "?").join(",")})`,
+        filteredIds
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: `${filteredIds.length} akun berhasil dihapus`,
       });
     } else if (action == "update") {
       if (!id && !username && !password) {

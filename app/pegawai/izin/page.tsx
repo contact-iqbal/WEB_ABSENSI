@@ -244,16 +244,16 @@ export default function IzinPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className='md:pt-12'>
+      <div className="flex items-center justify-between md:pt-12">
+        <div>
           <h1 className="text-2xl font-bold text-gray-800">Izin & Cuti</h1>
           <p className="text-gray-600 mt-1">Ajukan dan kelola izin atau cuti Anda</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className={`flex items-center gap-2 px-4 py-2 ${showForm ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors font-medium`}
         >
-          <FontAwesomeIcon icon={faPlus} />
+          {showForm ? <FontAwesomeIcon icon={faTrash}/> : <FontAwesomeIcon icon={faPlus} />}
           {showForm ? 'Batal' : 'Ajukan Izin/Cuti'}
         </button>
       </div>

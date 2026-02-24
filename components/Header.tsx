@@ -44,27 +44,6 @@ export default function Header({onMenuClick}: Adminheaderprop) {
     { title: 'Pengaturan', href: '/admin/pengaturan' },
   ];
 
-  const uploadImage = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "your_upload_preset");
-
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dlycnzq84/image/upload",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
-
-    if (!res.ok) {
-      throw new Error("Upload failed");
-    }
-
-    const data = await res.json();
-    return data.secure_url;
-  };
-
 
   return (
     <header className="fixed top-0 left-0 lg:left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 z-10">

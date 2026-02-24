@@ -35,6 +35,7 @@ export default function GajiPegawaiPage() {
           if (data.success) {
             setGajiHistory(data.result.history);
             setCurrentGaji(data.result.current);
+            console.log(data.result.current)
           }
         }
       } catch (error) {

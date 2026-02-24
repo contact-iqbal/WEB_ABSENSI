@@ -14,7 +14,7 @@ export default function Home() {
       const result = await response.json();
 
       if (result.success) {
-        if (result.accountAccess == "admin") {
+        if (result.accountAccess == "owner") {
           router.push('/admin');
         } else {
           router.push('/pegawai');

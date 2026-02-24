@@ -112,12 +112,13 @@ export async function POST(request: NextRequest) {
       );
 
       // Get config for calculation
-      const [config]: any = await pool.execute('SELECT jam_masuk, toleransi_telat, tunjangan_makan, tunjangan_transport, potongan_alpha FROM config LIMIT 1');
+      const [config]: any = await pool.execute('SELECT jam_masuk, toleransi_telat, tunjangan_makan, tunjangan_transport, potongan_alpha, potongan_terlambat FROM config LIMIT 1');
       const jamMasukConfig = config[0]?.jam_masuk || '08:00:00';
       const toleransiTelat = config[0]?.toleransi_telat || 0;
       const tunjanganMakanPerHari = config[0]?.tunjangan_makan || 0;
       const tunjanganTransportPerHari = config[0]?.tunjangan_transport || 0;
       const potonganAlphaPerHari = config[0]?.potongan_alpha || 0;
+      const potonganTerlambatPerMenit = config[0]?.potongan_terlambat || 0;
 
       // Calculate salary for each employee
       for (const k of karyawan) {
@@ -158,15 +159,21 @@ export async function POST(request: NextRequest) {
               const [hConfig, mConfig] = jamMasukConfig.split(':').map(Number);
               const [hAbsen, mAbsen] = record.absen_masuk.split(':').map(Number);
               
-              const minutesConfig = hConfig * 60 + mConfig;
+              const minutesConfig = hConfig * 60 + (mConfig + Number(toleransiTelat));
               const minutesAbsen = hAbsen * 60 + mAbsen;
               const minutesLate = minutesAbsen - minutesConfig;
 
+              const tolreansi = 5 // ini menit, jadi toleransi 5 menit keatas di kurangi 5%
+
               if (minutesLate > 0) {
                 terlambatCount++;
-                // 15.000 per hour (rounded up)
-                const multiplier = Math.ceil(minutesLate / 60);
-                totalPotonganTerlambat += multiplier * 15000;
+                if (minutesLate > tolreansi) {
+                  const finalpersen = minutesLate * potonganTerlambatPerMenit * 0.05;
+                  totalPotonganTerlambat += minutesLate * potonganTerlambatPerMenit - finalpersen; // ini persennya gtw kalo mending dikasih opsi di config ato ngga
+                } else {
+                  totalPotonganTerlambat += minutesLate * potonganTerlambatPerMenit;
+                }
+                
               }
             }
           }

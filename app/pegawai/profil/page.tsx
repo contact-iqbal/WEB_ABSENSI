@@ -137,7 +137,7 @@ export default function ProfilPage() {
       setPreviewImage(profiledata?.profile_picture || null);
       setSelectedFile(null);
       setEdit(false);
-      showInfo('Canceled','Kamu membatalkan aksi')
+      showToast('Aksi Dibatalkan','info')
     };
   const aliasesdevisi = (alias: string) => {
     if (alias === "RT") return "Rizqi Tour";
@@ -147,6 +147,7 @@ export default function ProfilPage() {
 
   const aliasesstatus = (alias: string) => {
     if (alias === "pegawai_tetap") return "Karyawan Tetap";
+    if (alias === "pegawai_sementara") return "Karyawan Sementara";
     return "-";
   };
 
@@ -289,7 +290,7 @@ export default function ProfilPage() {
                 { label: 'Tempat Lahir', key: 'tempat_lahir', icon: faMapPin },
                 { label: 'Tanggal Lahir', key: 'tanggal_lahir', icon: faCalendar, type: 'date' },
                 { label: 'Jenis Kelamin', key: 'jenis_kel', icon: faVenusMars, type: 'select', options: [['laki_laki', 'Laki-laki'], ['perempuan', 'Perempuan']] },
-                { label: 'Agama', key: 'agama', icon: faPray, type: 'select', options: [['islam', 'Islam'], ['kristen', 'Kristen'], ['katolik', 'Katolik'], ['hindu', 'Hindu'], ['budha', 'Budha'], ['konghucu', 'Konghucu']] },
+                { label: 'Agama', key: 'agama', icon: faPray, type: 'select', options: [['default','-'],['islam', 'Islam'], ['kristen', 'Kristen'], ['katolik', 'Katolik'], ['hindu', 'Hindu'], ['budha', 'Budha'], ['konghucu', 'Konghucu']] },
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
@@ -298,7 +299,7 @@ export default function ProfilPage() {
                   {edit ? (
                     field.type === 'select' ? (
                       <select
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
+                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-700"
                         value={String(pendingUpdate[field.key as keyof profilestructure] || '')}
                         onChange={(e) => setPendingUpdate(prev => ({ ...prev, [field.key]: e.target.value }))}
                       >
@@ -314,8 +315,8 @@ export default function ProfilPage() {
                       />
                     )
                   ) : (
-                    <p className="font-semibold text-gray-700">
-                      {field.key === 'jenis_kel' ? (pendingUpdate.jenis_kel === 'laki_laki' ? 'Laki-laki' : 'Perempuan') : field.key === 'tanggal_lahir' ? (new Date(String(pendingUpdate.tanggal_lahir)).toISOString().slice(0,10)) : String(pendingUpdate[field.key as keyof profilestructure] || '-')}
+                    <p className="font-semibold text-gray-700 capitalize">
+                      {field.key === 'jenis_kel' ? (pendingUpdate.jenis_kel === 'laki_laki' ? 'Laki laki' : pendingUpdate.jenis_kel === 'perempuan' ? 'Perempuan' : '-') : field.key === 'tanggal_lahir' && pendingUpdate.tanggal_lahir != null ? (new Date(String(pendingUpdate.tanggal_lahir)).toLocaleDateString('id-ID', {day:'2-digit',month : 'long', year:'numeric'})) : pendingUpdate.agama === 'default' ? '-' : String(pendingUpdate[field.key as keyof profilestructure] || '-')}
                     </p>
                   )}
                 </div>

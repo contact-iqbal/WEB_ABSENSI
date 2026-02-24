@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import pool from "@/lib/db";
+import { showError, showSuccess } from "@/lib/sweetalert";
 
 interface absen {
   id: number;
@@ -28,6 +29,11 @@ interface stats {
   tidak_hadir: number;
 }
 
+interface akun {
+  id: number;
+  nama: string;
+}
+
 export default function AbsensiPage() {
   const [absensi, setabsensi] = useState<absen[]>([]);
   const [stats, setStats] = useState<stats>({
@@ -38,10 +44,22 @@ export default function AbsensiPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState("Semua Status");
+  const [showModal, setShowModal] = useState(false);
+  const [akunkaryawan, setakunkaryawan] = useState<akun[]>([]);
+  const [absenupdate, setabsenupdate] = useState({
+    karyawan_id: 0,
+    status: 'hadir',
+    tanggal: '',
+    absen_masuk: '',
+    absen_keluar: '',
+    keterangan: null,
+    override: ''
+  })
 
   useEffect(() => {
     getabsensi();
     console.log(filterDate)
+    akun();
   }, [filterDate, filterStatus, searchTerm]);
 
   const getabsensi = async () => {
@@ -57,6 +75,53 @@ export default function AbsensiPage() {
       setStats(absensiresult.stats);
     }
   };
+  const akun = async () => {
+    const fetchakun = await fetch('/api/admin/karyawan')
+    const resultakun = await fetchakun.json();
+    if (resultakun.success) {
+      setakunkaryawan(resultakun.result)
+    }
+  }
+
+  const handleaddabsen = async () => {
+    if (absenupdate.karyawan_id === 0 || !absenupdate.status || !absenupdate.tanggal || !absenupdate.absen_masuk) {
+      await showError('Error', 'karyawan, tanggal, dan status harus terpilih!')
+      return
+    }
+    try {
+      const created_at = `${absenupdate.tanggal} ${absenupdate.absen_masuk}:00`
+      const response = await fetch("/api/admin/absensi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...absenupdate, override: created_at
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        showSuccess('Sukess', result.message)
+        setShowModal(false)
+        setabsenupdate({
+          karyawan_id: 0,
+          status: 'hadir',
+          tanggal: '',
+          absen_masuk: '',
+          absen_keluar: '',
+          keterangan: null,
+          override: ''
+        })
+        getabsensi()
+      } else {
+        showError('Error',result.message)
+      }
+    } catch (e) {
+      console.log(e)
+    }
+
+  }
   return (
     <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
@@ -65,14 +130,115 @@ export default function AbsensiPage() {
           <p className="text-gray-600 mt-1">Kelola absensi karyawan</p>
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+          {/* <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
             <FontAwesomeIcon icon={faFileImport} />
             Import Excel
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+          </button> */}
+          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            onClick={() => (setShowModal(true))}
+          >
             <FontAwesomeIcon icon={faPlus} />
             Catat Absensi
           </button>
+        </div>
+      </div>
+      <div className={`fixed inset-0 w-full h-full bg-black bg-black/50 flex items-center justify-center z-50 transition-all ${showModal ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-sm">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
+            Tambah Rekap Absensi Baru
+          </h2>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Karyawan
+              </label>
+              <select
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setabsenupdate({
+                  ...absenupdate, karyawan_id: Number(e.target.value)
+                })}
+                value={absenupdate.karyawan_id}
+              >
+                <option value="0" hidden>-</option>
+                {akunkaryawan.map((akunkaryawan) => (
+                  <option key={akunkaryawan.id} value={akunkaryawan.id}>id:{akunkaryawan.id}, {akunkaryawan.nama} </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tanggal
+              </label>
+              <input type="date" name="tanggal_absen" id="tanggal_absen" className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setabsenupdate({
+                  ...absenupdate, tanggal: e.target.value
+                })}
+                value={absenupdate.tanggal}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Jam Masuk
+              </label>
+              <input type="time" className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setabsenupdate({
+                  ...absenupdate, absen_masuk: e.target.value
+                })}
+                value={absenupdate.absen_masuk}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Jam Keluar
+              </label>
+              <input type="time" className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => setabsenupdate({
+                  ...absenupdate, absen_keluar: e.target.value
+                })}
+                value={absenupdate.absen_keluar}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                onChange={(e) => setabsenupdate({
+                  ...absenupdate, status: e.target.value
+                })}
+                value={absenupdate.status}
+                className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="hadir">Hadir</option>
+                <option value="terlambat">Terlambat</option>
+                <option value="alpha">Alpha</option>
+                <option value="sakit">Sakit</option>
+                <option value="izin">Izin</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => {
+                setShowModal(false);
+
+              }}
+              className="flex-1 px-4 py-2 bg-red-500 border border-gray-300 text-gray-700 rounded-lg hover:bg-red-600 transition-colors font-medium text-white"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleaddabsen}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Simpan
+            </button>
+          </div>
         </div>
       </div>
 
@@ -185,7 +351,7 @@ export default function AbsensiPage() {
                 absensi.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-gray-800 whitespace-nowrap">
-                      {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/','-')}
+                      {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/', '-')}
                     </td>
                     <td className="px-6 py-4">
                       <p className="font-medium text-gray-800">{item.nama}</p>
@@ -203,17 +369,16 @@ export default function AbsensiPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          item.status === "hadir"
-                            ? "bg-green-100 text-green-700"
-                            : item.status === "terlambat"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : item.status === "izin"
-                                ? "bg-blue-100 text-blue-700"
-                                : item.status === "sakit"
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-red-100 text-red-700"
-                        }`}
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${item.status === "hadir"
+                          ? "bg-green-100 text-green-700"
+                          : item.status === "terlambat"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : item.status === "izin"
+                              ? "bg-blue-100 text-blue-700"
+                              : item.status === "sakit"
+                                ? "bg-orange-100 text-orange-700"
+                                : "bg-red-100 text-red-700"
+                          }`}
                       >
                         {item.status.charAt(0).toUpperCase() +
                           item.status.slice(1)}

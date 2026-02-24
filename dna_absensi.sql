@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: Feb 11, 2026 at 01:17 AM
--- Server version: 8.4.3
--- PHP Version: 8.3.16
+-- Host: localhost
+-- Generation Time: Feb 23, 2026 at 04:48 AM
+-- Server version: 8.0.30
+-- PHP Version: 8.1.10
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -42,9 +42,10 @@ CREATE TABLE `absensi` (
 --
 
 INSERT INTO `absensi` (`id`, `tanggal`, `absen_masuk`, `absen_keluar`, `status`, `keterangan`, `created_at`) VALUES
-(2, '2026-02-02', '08:35:00', '08:36:00', 'hadir', NULL, '2026-02-02 01:35:24'),
-(8, '2026-02-02', '08:56:00', '13:06:00', 'hadir', NULL, '2026-02-02 01:56:47'),
-(8, '2026-02-05', '16:25:00', NULL, 'hadir', NULL, '2026-02-05 09:25:07');
+(2, '2026-02-20', NULL, NULL, 'izin', 'Izin: izin (Pengen tidur)', '2026-02-20 06:20:03'),
+(2, '2026-02-22', '08:10:00', NULL, 'hadir', NULL, '2026-02-22 02:26:56'),
+(2, '2026-02-23', '08:10:00', NULL, 'hadir', NULL, '2026-02-23 02:26:56'),
+(8, '2026-02-23', '09:44:00', NULL, 'terlambat', NULL, '2026-02-23 02:44:28');
 
 -- --------------------------------------------------------
 
@@ -55,19 +56,22 @@ INSERT INTO `absensi` (`id`, `tanggal`, `absen_masuk`, `absen_keluar`, `status`,
 CREATE TABLE `config` (
   `nama_perusahaan` varchar(100) DEFAULT NULL,
   `alamat_perusahaan` longtext,
-  `no_telp_perusahaan` int DEFAULT NULL,
+  `no_telp_perusahaan` varchar(20) DEFAULT NULL,
   `email_perusahaan` varchar(100) DEFAULT NULL,
   `jam_masuk` time DEFAULT NULL,
   `jam_pulang` time DEFAULT NULL,
-  `toleransi_telat` int DEFAULT NULL
+  `toleransi_telat` int DEFAULT NULL,
+  `tunjangan_makan` int DEFAULT '0',
+  `tunjangan_transport` int DEFAULT '0',
+  `potongan_alpha` int NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `config`
 --
 
-INSERT INTO `config` (`nama_perusahaan`, `alamat_perusahaan`, `no_telp_perusahaan`, `email_perusahaan`, `jam_masuk`, `jam_pulang`, `toleransi_telat`) VALUES
-('DNA Jaya Group', NULL, NULL, NULL, '08:00:00', '17:00:00', 15);
+INSERT INTO `config` (`nama_perusahaan`, `alamat_perusahaan`, `no_telp_perusahaan`, `email_perusahaan`, `jam_masuk`, `jam_pulang`, `toleransi_telat`, `tunjangan_makan`, `tunjangan_transport`, `potongan_alpha`) VALUES
+('DNA Jaya Group', 'taman dhika', '+6212345678900', 'dnajayagroup@dnajayagroup.co.id', '08:00:00', '17:00:00', 15, 20000, 15000, 100000);
 
 -- --------------------------------------------------------
 
@@ -94,8 +98,8 @@ CREATE TABLE `gaji` (
 --
 
 INSERT INTO `gaji` (`id`, `karyawan_id`, `bulan`, `tahun`, `gaji_pokok`, `total_tunjangan`, `total_potongan`, `gaji_bersih`, `status_bayar`, `tanggal_bayar`, `created_at`) VALUES
-(1, 2, 2, 2026, 0.00, 0.00, 0.00, 0.00, 'sudah_dibayar', '2026-02-02', '2026-02-02 01:49:01'),
-(3, 8, 2, 2026, 0.00, 0.00, 0.00, 0.00, 'belum_dibayar', NULL, '2026-02-02 01:59:09');
+(14, 2, 2, 2026, 5000000.00, 70000.00, 0.00, 5070000.00, 'belum_dibayar', NULL, '2026-02-23 02:51:02'),
+(15, 8, 2, 2026, 500000.00, 35000.00, 30000.00, 505000.00, 'belum_dibayar', NULL, '2026-02-23 02:51:02');
 
 -- --------------------------------------------------------
 
@@ -116,6 +120,13 @@ CREATE TABLE `izin` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `izin`
+--
+
+INSERT INTO `izin` (`id`, `karyawan_id`, `jenis_izin`, `tanggal_mulai`, `tanggal_selesai`, `keterangan`, `bukti`, `status`, `approved_by`, `created_at`) VALUES
+(1, 2, 'izin', '2026-02-20', '2026-02-22', 'Pengen tidur', 'https://res.cloudinary.com/dnajayagroup/image/upload/v1771567611/web_absensi/izin/e9fhuujhh50msskzzcyn.jpg', 'disetujui', 1, '2026-02-20 06:06:51');
+
 -- --------------------------------------------------------
 
 --
@@ -127,14 +138,14 @@ CREATE TABLE `karyawan` (
   `nama` varchar(120) NOT NULL,
   `jabatan` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'karyawan',
   `devisi` enum('default','DNA','RT') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `status` enum('default','pegawai_tetap') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `status` enum('default','pegawai_tetap','pegawai_sementara') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `profile_picture` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   `acc_created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `NIK` int NOT NULL,
+  `NIK` bigint NOT NULL,
   `tempat_lahir` varchar(80) DEFAULT NULL,
   `tanggal_lahir` date DEFAULT NULL,
-  `jenis_kel` enum('laki_laki','perempuan') DEFAULT NULL,
-  `agama` enum('islam','kristen','hindu','budha','katolik','konghucu') DEFAULT NULL,
+  `jenis_kel` enum('default','laki_laki','perempuan') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `agama` enum('default','islam','hindu','budha','katolik','konghucu','kristen') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `alamat` longtext,
   `email` varchar(100) DEFAULT NULL,
   `no_telp` varchar(25) DEFAULT NULL,
@@ -146,9 +157,9 @@ CREATE TABLE `karyawan` (
 --
 
 INSERT INTO `karyawan` (`id`, `nama`, `jabatan`, `devisi`, `status`, `profile_picture`, `acc_created`, `NIK`, `tempat_lahir`, `tanggal_lahir`, `jenis_kel`, `agama`, `alamat`, `email`, `no_telp`, `gaji_pokok`) VALUES
-(1, 'admin', 'superadmin', 'default', 'default', 'https://s3.getstickerpack.com/storage/uploads/sticker-pack/wielino-pack-01/sticker_20.png?d234a22dce20ea9317b0ba8c556b98e0&d=200x200', '2026-01-22 03:35:21', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(2, 'M Iqbal Ramadhan', 'bendahara', 'DNA', 'default', '', '2026-01-22 03:35:21', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
-(8, 'akunbaru', 'karyawan', 'default', 'default', NULL, '2026-02-02 01:56:24', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+(1, 'admin', 'superadmin', 'default', 'default', 'https://s3.getstickerpack.com/storage/uploads/sticker-pack/wielino-pack-01/sticker_20.png?d234a22dce20ea9317b0ba8c556b98e0&d=200x200', '2026-01-22 10:35:21', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0),
+(2, 'M Iqbal Ramadhan Al Faris', 'bendahara', 'DNA', 'pegawai_tetap', 'https://res.cloudinary.com/dnajayagroup/image/upload/v1771570751/web_absensi/profile/qdgxysv9tiswvjxmjjp2.jpg', '2020-01-22 10:35:21', 327106301002000, 'Surabaya', '2008-02-23', 'laki_laki', 'islam', 'deket yudhis, lebo', 'farisikbal304@gmail.com', '0812345678900', 5000000),
+(8, 'akunbaru', 'karyawan', 'RT', 'pegawai_sementara', 'https://images-porsche.imgix.net/-/media/6B40E90F01E74657A4F4827FC7A7959F_E6F748D71779489DA12FBF73E9002145_CZ25W18OX0002-911-gt3-white-rear?w=1496&h=1986&q=45&crop=faces%2Centropy%2Cedges&auto=format', '2026-02-02 08:56:24', 0, 'September', '2002-02-19', 'perempuan', 'budha', 'deket iqbal', 'kurtau@ychproject.my.id', '087886820365', 500000);
 
 -- --------------------------------------------------------
 
@@ -164,6 +175,17 @@ CREATE TABLE `potongan_gaji` (
   `keterangan` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `potongan_gaji`
+--
+
+INSERT INTO `potongan_gaji` (`id`, `gaji_id`, `jenis_potongan`, `jumlah`, `keterangan`) VALUES
+(28, 64, 'Potongan Terlambat', 75000.00, '2 kali terlambat'),
+(29, 65, 'Potongan Terlambat', 45000.00, '2 kali terlambat'),
+(45, 27, 'Potongan Terlambat', 45000.00, '2 kali terlambat'),
+(47, 29, 'Potongan Alpha', 100000.00, '1 hari alpha'),
+(49, 15, 'Potongan Terlambat', 30000.00, '1 kali terlambat');
+
 -- --------------------------------------------------------
 
 --
@@ -177,6 +199,22 @@ CREATE TABLE `tunjangan` (
   `jumlah` decimal(15,2) NOT NULL DEFAULT '0.00',
   `keterangan` text
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
+-- Dumping data for table `tunjangan`
+--
+
+INSERT INTO `tunjangan` (`id`, `gaji_id`, `jenis_tunjangan`, `jumlah`, `keterangan`) VALUES
+(9, 64, 'Tunjangan Makan', 140000.00, '7 hari kerja'),
+(10, 64, 'Tunjangan Transport', 105000.00, '7 hari kerja'),
+(11, 65, 'Tunjangan Makan', 100000.00, '5 hari kerja'),
+(12, 65, 'Tunjangan Transport', 75000.00, '5 hari kerja'),
+(33, 27, 'Tunjangan Makan', 100000.00, '5 hari kerja'),
+(34, 27, 'Tunjangan Transport', 75000.00, '5 hari kerja'),
+(47, 14, 'Tunjangan Makan', 40000.00, '2 hari kerja'),
+(48, 14, 'Tunjangan Transport', 30000.00, '2 hari kerja'),
+(49, 15, 'Tunjangan Makan', 20000.00, '1 hari kerja'),
+(50, 15, 'Tunjangan Transport', 15000.00, '1 hari kerja');
 
 -- --------------------------------------------------------
 
@@ -197,8 +235,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `password`, `type`) VALUES
 (1, 'admin', '$2b$12$R06zEf0FevGHRrNH0FHNvOiadk6RQxCorLmmBlx4s7Gg6P2iSX6Cm', 'admin'),
-(2, 'iqbalbal', '$2b$12$BPbm3aUGKKGgWLbu4/o.Buvw8SGV1cbS.qGfaW4U9wfwQRnDz4ln.', 'pegawai'),
-(5, 'iqbal', '$2b$12$U7w/G46dZFlDWJ/jsK4ZuONYGug6E4zH5BsdqTNpEMFb/UXCizBnC', 'pegawai'),
+(2, 'iqbalbal', '$2b$12$jKo6LpIOotnookyksvGr2OMtEpFxhQSwimntAMyaJJsoqk10meInm', 'pegawai'),
 (8, 'akunbaru', '$2b$12$bb077vMpgF.8keic5s/87uZjicZDyuq9dkmzThGgDSKaY2c3IMA3u', 'pegawai');
 
 --
@@ -265,31 +302,31 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `gaji`
 --
 ALTER TABLE `gaji`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `izin`
 --
 ALTER TABLE `izin`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `potongan_gaji`
 --
 ALTER TABLE `potongan_gaji`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `tunjangan`
 --
 ALTER TABLE `tunjangan`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables

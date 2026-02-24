@@ -54,6 +54,23 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchdata();
   }, []);
+  const [authResult, setAuthResult] = useState<any>(null);
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const result = await response.json();
+
+      if (result.success) {
+        setAuthResult(result);
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+    }
+  };
 
   const formatRupiah = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -85,7 +102,7 @@ export default function DashboardPage() {
         change: "0%",
       },
       {
-        title: "Tidak Hadir",
+        title: "Tidak Hadir Hari Ini",
         value: String(Data?.tidak_hadir_hari_ini ?? 0),
         icon: faTimes,
         bgColor: "bg-red-600",
@@ -93,7 +110,7 @@ export default function DashboardPage() {
       },
       {
         title: "Total Gaji Bulan Ini",
-        value: formatRupiah(Data?.total_gaji_bulan_ini ?? 0),
+        value: authResult && authResult.accountAccess === 'hrd' ? '...' : formatRupiah(Data?.total_gaji_bulan_ini ?? 0) ,
         icon: faMoneyBillWave,
         bgColor: "bg-orange-400",
         change: "+0%",
@@ -200,7 +217,7 @@ export default function DashboardPage() {
                     (a, b) =>
                       new Date(b.waktu).getTime() -
                       new Date(a.waktu).getTime()
-                  ).slice(0,5)
+                  ).slice(0, 5)
                   .map((aktivitas, index) => (
                     <div
                       key={index}
@@ -236,12 +253,6 @@ export default function DashboardPage() {
               Belum ada aktivitas
             </div>
           )}
-        </div>
-        <div className="bg-white col-span-1 lg:col-span-2 rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">
-            Convert Spreadshseet to database
-          </h3>
-          <div className="text-center py-8 text-gray-500">Coming soon</div>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import "./globals.css";
 import "@fortawesome/fontawesome-svg-core/styles.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
+import 'animate.css'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
