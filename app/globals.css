@@ -56,3 +56,30 @@ body {
 .colored-toast .swal2-html-container {
   color: white;
 }
+
+/* Works for Chrome, Edge, Safari */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 1px;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background-color: #999;
+  border-radius: 8px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox */
+html,
+body {
+  scrollbar-width: none;
+  scrollbar-color: #999 transparent;
+}
+body::-webkit-scrollbar {
+  display: none;
+}

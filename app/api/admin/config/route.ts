@@ -1,6 +1,5 @@
 import pool from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import test from "node:test";
 
 export async function GET(request: NextRequest) {
     try {
@@ -39,9 +38,10 @@ export async function POST(request: NextRequest) {
             tunjangan_makan,
             potongan_alpha,
             potongan_terlambat,
+            toleransi_potongan_terlambat
         } = await request.json();
 
-        await pool.execute(`UPDATE config SET nama_perusahaan = ?, alamat_perusahaan = ?, no_telp_perusahaan = ?, email_perusahaan = ?, jam_masuk = ?, jam_pulang = ?, toleransi_telat = ?, tunjangan_transport = ?, tunjangan_makan = ?, potongan_alpha = ?, potongan_terlambat = ? LIMIT 1`, [nama_perusahaan, alamat_perusahaan,no_telp_perusahaan,email_perusahaan,jam_masuk,jam_pulang,toleransi_telat, tunjangan_transport, tunjangan_makan, potongan_alpha, potongan_terlambat])
+        await pool.execute(`UPDATE config SET nama_perusahaan = ?, alamat_perusahaan = ?, no_telp_perusahaan = ?, email_perusahaan = ?, jam_masuk = ?, jam_pulang = ?, toleransi_telat = ?, tunjangan_transport = ?, tunjangan_makan = ?, potongan_alpha = ?, potongan_terlambat = ?, toleransi_potongan_terlambat = ? LIMIT 1`, [nama_perusahaan, alamat_perusahaan,no_telp_perusahaan,email_perusahaan,jam_masuk,jam_pulang,toleransi_telat, tunjangan_transport, tunjangan_makan, potongan_alpha, potongan_terlambat, toleransi_potongan_terlambat])
 
         return NextResponse.json({
             success: true,

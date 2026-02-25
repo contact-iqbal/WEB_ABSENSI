@@ -55,7 +55,7 @@ export default function PegawaiHeader({ onMenuClick }: PegawaiHeaderProps) {
         >
           <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center overflow-hidden">
             {authResult != null &&
-              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
+              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" className='h-full w-full object-cover'/> : <FontAwesomeIcon icon={faUser} className="text-base" />)
             }
           </div>
           <span className="hidden sm:block text-sm font-medium">{authResult && (authResult.username)}</span>

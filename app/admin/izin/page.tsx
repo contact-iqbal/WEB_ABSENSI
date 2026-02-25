@@ -14,6 +14,8 @@ import { useState, useEffect } from 'react';
 import { showError, showSuccess, showConfirm, showImage } from '@/lib/sweetalert';
 
 interface Izin {
+  lembur_selesai: string;
+  lembur_mulai: string;
   id: number;
   karyawan_id: number;
   nama: string;
@@ -160,13 +162,13 @@ export default function IzinAdminPage() {
               <input
                 type="text"
                 placeholder="Cari nama karyawan..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full pl-10 text-black pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <select
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="px-4 py-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -184,7 +186,7 @@ export default function IzinAdminPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Karyawan</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal/Jam</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keterangan</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
@@ -203,14 +205,14 @@ export default function IzinAdminPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-800">
-                        {new Date(item.tanggal_mulai).toLocaleDateString('id-ID')}
+                        {item.tanggal_mulai != '' && item.tanggal_mulai != null ? new Date(item.tanggal_mulai).toLocaleDateString('id-ID').replaceAll('/', '-') : item.lembur_mulai}
                       </div>
                       <div className="text-xs text-gray-500">
-                        s/d {new Date(item.tanggal_selesai).toLocaleDateString('id-ID')}
+                        s/d {item.tanggal_selesai != '' && item.tanggal_mulai != null ? new Date(item.tanggal_selesai).toLocaleDateString('id-ID').replaceAll('/', '-') : item.lembur_selesai}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600 truncate max-w-xs" title={item.keterangan}>
+                      <p className="text-sm text-gray-600 max-w-xs" title={item.keterangan}>
                         {item.keterangan || '-'}
                       </p>
                     </td>

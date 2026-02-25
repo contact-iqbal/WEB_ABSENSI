@@ -13,7 +13,9 @@ import {
   faUser,
   IconDefinition,
   faSignOutAlt,
-  faEnvelope
+  faEnvelope,
+  faClock,
+  faArrowRight
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 interface MenuItem {
@@ -39,6 +41,7 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
     { title: 'Izin', icon: faEnvelope, href: '/admin/izin' },
     { title: 'Laporan', icon: faChartBar, href: '/admin/laporan' },
     { title: 'Pengaturan', icon: faCog, href: '/admin/pengaturan' },
+    { title: 'Ceklog', icon: faArrowRight, href: '/pegawai'}
   ];
   const pathname = usePathname();
   const router = useRouter();
@@ -73,11 +76,11 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
       console.error('Auth check error:', error);
     }
   };
-  let filteredforhrd;
-  if (authResult === null) {
-    filteredforhrd = [{ title: 'Dashboard', icon: faChartLine, href: '/admin' },]
+  let filteredbasedonaccess;
+  if (authResult === null || authResult.accountAccess === 'pegawai') {
+    filteredbasedonaccess = [{ title: 'Dashboard', icon: faChartLine, href: '/admin' },]
   } else {
-    filteredforhrd = authResult && authResult.accountAccess === 'hrd' ? menuItems.filter(item => ['Dashboard', 'Absensi', 'Izin'].includes(item.title)) : menuItems
+    filteredbasedonaccess = authResult && authResult.accountAccess === 'hrd' ? menuItems.filter(item => ['Dashboard', 'Absensi', 'Izin', 'Ceklog'].includes(item.title)) : menuItems
   }
 
   return (
@@ -97,7 +100,7 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
 
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-3">
-            {filteredforhrd.map((item) => {
+            {filteredbasedonaccess.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <li key={item.href}>

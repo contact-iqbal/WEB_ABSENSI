@@ -80,13 +80,13 @@ export default function PegawaiDashboard() {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
-        })[0] &&
+        }) &&
         todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
           timeZone: 'Asia/Jakarta',
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
-        })[0]
+        })
       );
       if (todayLeave) {
         setIsOnLeave(true);
@@ -199,13 +199,13 @@ export default function PegawaiDashboard() {
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
-        })[0] &&
+        }) &&
         todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
           timeZone: 'Asia/Jakarta',
           year: 'numeric',
           month: '2-digit',
           day: '2-digit'
-        })[0]
+        })
       );
 
       if (hasIzinToday) {
@@ -321,7 +321,7 @@ export default function PegawaiDashboard() {
               <div className="inline-flex items-center justify-center w-24 h-24 bg-blue-100 rounded-full mb-6">
                 <FontAwesomeIcon icon={faUmbrellaBeach} className="text-5xl text-blue-600" />
               </div>
-              <h2 className="text-4xl font-bold text-gray-800 mb-2">Istirahatlah...</h2>
+              <h2 className="text-4xl font-bold text-gray-800 mb-2">{leaveInfo?.jenis_izin === 'izin' ? 'Istirahatlah...' : leaveInfo?.jenis_izin === 'sakit' ? 'Cepat sembuh ya...' : leaveInfo?.jenis_izin === 'cuti' ? 'Semangat liburnya!' : ''}</h2>
               <p className="text-gray-600 text-lg">
                 Anda sedang dalam masa <span className="font-bold text-blue-600 capitalize">{leaveInfo?.jenis_izin}</span> yang telah disetujui.
               </p>

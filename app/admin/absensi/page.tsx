@@ -288,7 +288,7 @@ export default function AbsensiPage() {
 
       <div className="bg-white rounded-lg shadow-md">
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex-1">
               <input
                 type="text"

@@ -51,18 +51,22 @@ export async function POST(request: NextRequest) {
       jenis_izin,
       tanggal_mulai,
       tanggal_selesai,
+      lembur_mulai,
+      lembur_selesai,
       keterangan,
       bukti,
     } = await request.json();
 
     await pool.execute(
-      `INSERT INTO izin (karyawan_id, jenis_izin, tanggal_mulai, tanggal_selesai, keterangan, bukti, status)
-             VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+      `INSERT INTO izin (karyawan_id, jenis_izin, tanggal_mulai, tanggal_selesai, lembur_mulai, lembur_selesai, keterangan, bukti, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
       [
         karyawan_id,
         jenis_izin,
-        tanggal_mulai,
-        tanggal_selesai,
+        tanggal_mulai || null,
+        tanggal_selesai || null,
+        lembur_mulai || null,
+        lembur_selesai || null,
         keterangan,
         bukti,
       ],
@@ -89,14 +93,21 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { id, action, approved_by, keterangan, bukti } = await request.json();
+    const { id, action, approved_by, keterangan, bukti, tanggal_mulai, tanggal_selesai, lembur_mulai, lembur_selesai, } = await request.json();
 
     if (action === "edit") {
       // Only allow edit if status is pending
-      await pool.execute(
-        `UPDATE izin SET keterangan = ?, bukti = ? WHERE id = ? AND status = 'pending'`,
-        [keterangan, bukti, id],
-      );
+      if (tanggal_mulai != '' && tanggal_selesai != '' && tanggal_mulai != null && tanggal_selesai != null) {
+        await pool.execute(
+          `UPDATE izin SET keterangan = ?, bukti = ?, tanggal_mulai = ?, tanggal_selesai = ? WHERE id = ? AND status = 'pending'`,
+          [keterangan, bukti,tanggal_mulai, tanggal_selesai, id],
+        );
+      } else if (lembur_mulai != '' && lembur_selesai != '' && lembur_mulai != null && lembur_selesai != null) {
+        await pool.execute(
+          `UPDATE izin SET keterangan = ?, bukti = ?, lembur_mulai = ?, lembur_selesai = ? WHERE id = ? AND status = 'pending'`,
+          [keterangan, bukti,lembur_mulai, lembur_selesai, id],
+        );
+      }
       return NextResponse.json(
         {
           success: true,

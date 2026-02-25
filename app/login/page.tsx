@@ -30,7 +30,7 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (result.success) {
-        if (result.accountAccess === "owner" || result.accountAccess === 'hrd') {
+        if (result.accountAccess === "owner") {
           router.push("/admin");
         } else {
           router.push("/pegawai");
@@ -70,7 +70,7 @@ export default function LoginPage() {
             `Selamat datang, ${result.user.real_name}!`,
           );
           setLoading(false);
-          router.push(result.user.type === "owner" || result.user.type === 'hrd' ? "/admin" : "/pegawai");
+          router.push(result.user.type === "owner" ? "/admin" : "/pegawai");
         }
       } else {
         setLoading(false);

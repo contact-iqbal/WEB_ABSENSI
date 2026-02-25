@@ -87,8 +87,8 @@ export async function GET(request: NextRequest) {
                 COUNT(CASE WHEN status = 'terlambat' THEN 1 END) as terlambat,
                 COUNT(CASE WHEN status IN ('izin', 'sakit', 'alpha') THEN 1 END) as tidak_hadir
             FROM absensi
-            WHERE tanggal = CURDATE()
-        `);
+            
+        `); //WHERE tanggal = CURDATE() ini kalo mau cuma hari ini
 
     return NextResponse.json(
       {

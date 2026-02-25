@@ -35,7 +35,6 @@ export default function GajiPegawaiPage() {
           if (data.success) {
             setGajiHistory(data.result.history);
             setCurrentGaji(data.result.current);
-            console.log(data.result.current)
           }
         }
       } catch (error) {
@@ -143,7 +142,7 @@ export default function GajiPegawaiPage() {
                 ) : (
                   <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span className="text-gray-600">Tidak ada potongan</span>
-                    <span className="font-semibold text-green-600">Rp 0</span>
+                    {/* <span className="font-semibold text-green-600">Rp 0</span> */}
                   </div>
                 )}
               </div>

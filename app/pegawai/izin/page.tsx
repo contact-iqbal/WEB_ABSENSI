@@ -6,6 +6,8 @@ import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 
 interface Izin {
+  lembur_selesai: string;
+  lembur_mulai: string;
   id: number;
   jenis_izin: string;
   tanggal_mulai: string;
@@ -31,10 +33,15 @@ export default function IzinPage() {
   const [keterangan, setKeterangan] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [lemburMulai, setLemburMulai] = useState('');
+  const [lemburSelesai, setLemburSelesai] = useState('');
 
   useEffect(() => {
     fetchSession();
   }, []);
+  useEffect(() => {
+    console.log(riwayatIzin)
+  }, [riwayatIzin]);
 
   const fetchSession = async () => {
     try {
@@ -68,8 +75,10 @@ export default function IzinPage() {
     setIsEditing(true);
     setEditingId(item.id);
     setJenisIzin(item.jenis_izin);
-    setTanggalMulai(item.tanggal_mulai.split('T')[0]);
-    setTanggalSelesai(item.tanggal_selesai.split('T')[0]);
+    item.tanggal_mulai != null && item.tanggal_mulai != '' ? setTanggalMulai(item.tanggal_mulai.split('T')[0]) : setTanggalMulai('');
+    item.tanggal_selesai != null && item.tanggal_selesai != '' ? setTanggalSelesai(item.tanggal_selesai.split('T')[0]) : setTanggalSelesai('');
+    setLemburMulai(item.lembur_mulai);
+    setLemburSelesai(item.lembur_selesai);
     setKeterangan(item.keterangan);
     setExistingBukti(item.bukti);
     setShowForm(true);
@@ -104,7 +113,7 @@ export default function IzinPage() {
       // Max 5MB check
       if (selectedFile.size > 5 * 1024 * 1024) {
         showError('Gagal', 'Ukuran file terlalu besar (Maksimal 5MB)');
-        e.target.value = ''; // Reset the input
+        e.target.value = '';
         return;
       }
       setFile(selectedFile);
@@ -120,7 +129,7 @@ export default function IzinPage() {
           const res = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               file: reader.result,
               folder: 'web_absensi/izin'
             })
@@ -141,11 +150,40 @@ export default function IzinPage() {
 
   const handleSubmitIzin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Date validation logic
-    const start = new Date(tanggalMulai);
-    const end = new Date(tanggalSelesai);
+    let tanggalMulaiRECON
+    let tanggalSelesaiRECON
+
+    if (tanggalMulai === '' || tanggalSelesai === '' || tanggalMulai === null || tanggalSelesai === null || jenisIzin === 'lembur') {
+      tanggalMulaiRECON = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      tanggalSelesaiRECON = new Date().toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
+      setTanggalMulai('')
+      setTanggalSelesai('')
+      // console.log('lembur masuk sini')
+    } else {
+      tanggalMulaiRECON = tanggalMulai
+      tanggalSelesaiRECON = tanggalSelesai
+      setLemburMulai('')
+      setLemburSelesai('')
+      // console.log('nggak lembur masuk sini')
+    }
+    const start = new Date(tanggalMulaiRECON);
+    const end = new Date(tanggalSelesaiRECON);
     const currentYear = new Date().getFullYear();
+    // console.log(jenisIzin)
+    // console.log(tanggalMulai, tanggalSelesai)
+    // console.log(tanggalMulaiRECON, tanggalSelesaiRECON)
+    // console.log(start, end)
+    // console.log(lemburMulai, lemburSelesai)
 
     if (start > end) {
       showError('Gagal', 'Tanggal mulai tidak boleh melebihi tanggal selesai');
@@ -159,27 +197,97 @@ export default function IzinPage() {
 
     // Check if trying to apply for today while already checked in
     const todayStr = new Date().toISOString().split('T')[0];
-    if (tanggalMulai === todayStr && !isEditing) {
-      try {
-        const checkAbsen = await fetch('/api/karyawan/absen', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: userId, requests: 'fetch' })
+
+    try {
+      const checkAbsen = await fetch('/api/karyawan/absen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: userId, requests: 'fetch' })
+      });
+
+      const absenData = await checkAbsen.json();
+      console.log(absenData);
+
+      if (tanggalMulaiRECON === todayStr && !isEditing) {
+        const todayLembur = riwayatIzin.find((item: any) => {
+          const isLembur = item.jenis_izin?.toLowerCase() === 'lembur';
+
+          const createdDate = new Date(item.created_at).toLocaleDateString('en-CA', {
+            timeZone: 'Asia/Jakarta',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+          });
+
+          const isToday = createdDate === todayStr;
+
+          const notRejected = item.status?.toLowerCase() !== 'ditolak';
+
+          return isLembur && isToday && notRejected;
         });
-        const absenData = await checkAbsen.json();
-        if (absenData.success && absenData.result.length > 0) {
-          showError('Gagal', 'Anda sudah melakukan absen masuk hari ini. Tidak dapat mengajukan izin untuk hari ini.');
+
+        // If already have lembur today → block
+        if (todayLembur && jenisIzin?.toLowerCase() === 'lembur') {
+          showError('Gagal', 'Anda sudah mengajukan lembur hari ini');
           return;
         }
-      } catch (error) {
-        console.error('Error checking attendance:', error);
+        if (absenData.success) {
+
+          const todayAbsen = absenData.result.find(
+            (item: { tanggal: string | number | Date; status: string }) => {
+
+              const itemDate = new Date(item.tanggal).toLocaleDateString('en-CA', {
+                timeZone: 'Asia/Jakarta',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+              });
+
+              return itemDate === todayStr;
+            }
+          );
+
+          const blockedStatuses = ['izin', 'alpha', 'sakit', 'cuti'];
+          const hadirStatuses = ['hadir', 'terlambat'];
+          const allowedWithoutAbsen = ['cuti', 'izin', 'sakit'];
+
+          const jenis = jenisIzin?.toLowerCase();
+
+          // ga ada absen nya hari ini masuk sini
+          if (!todayAbsen) {
+            if (!allowedWithoutAbsen.includes(jenis)) {
+              showError('Gagal', 'Lembur hanya bisa diajukan setelah absen masuk');
+              return;
+            }
+          }
+
+          // kalo ada absen nya hari ini
+          if (todayAbsen) {
+            const status = todayAbsen.status?.toLowerCase();
+
+            // If already izin/alpha/sakit/cuti → block everything
+            if (blockedStatuses.includes(status)) {
+              showError('Gagal', 'Anda sudah memiliki izin atau tidak hadir hari ini');
+              return;
+            }
+
+            // If hadir / terlambat → only allow lembur
+            if (hadirStatuses.includes(status) && jenis !== 'lembur') {
+              showError('Gagal', 'Anda telah absen hari ini dan hanya bisa mengajukan lembur untuk hari ini!');
+              return;
+            }
+          }
+        }
       }
+
+    } catch (error) {
+      console.error('Error checking attendance:', error);
     }
 
     try {
       setUploading(true);
       let buktiUrl = existingBukti;
-      
+
       if (file) {
         buktiUrl = await uploadToCloudinary(file);
       }
@@ -194,6 +302,8 @@ export default function IzinPage() {
           jenis_izin: jenisIzin,
           tanggal_mulai: tanggalMulai,
           tanggal_selesai: tanggalSelesai,
+          lembur_mulai: lemburMulai,
+          lembur_selesai: lemburSelesai,
           keterangan: keterangan,
           bukti: buktiUrl
         })
@@ -220,6 +330,8 @@ export default function IzinPage() {
     setJenisIzin('izin');
     setTanggalMulai('');
     setTanggalSelesai('');
+    setLemburMulai('');
+    setLemburSelesai('');
     setKeterangan('');
     setFile(null);
     setIsEditing(false);
@@ -246,14 +358,14 @@ export default function IzinPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between md:pt-12">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Izin & Cuti</h1>
-          <p className="text-gray-600 mt-1">Ajukan dan kelola izin atau cuti Anda</p>
+          <h1 className="text-2xl font-bold text-gray-800">Izin, Cuti & Lembur</h1>
+          <p className="text-gray-600 mt-1">Ajukan dan kelola izin, cuti atau lembur Anda</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           className={`flex items-center gap-2 px-4 py-2 ${showForm ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors font-medium`}
         >
-          {showForm ? <FontAwesomeIcon icon={faTrash}/> : <FontAwesomeIcon icon={faPlus} />}
+          {showForm ? <FontAwesomeIcon icon={faTrash} /> : <FontAwesomeIcon icon={faPlus} />}
           {showForm ? 'Batal' : 'Ajukan Izin/Cuti'}
         </button>
       </div>
@@ -298,15 +410,15 @@ export default function IzinPage() {
 
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-6 animate-in fade-in slide-in-from-top-4 duration-300">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">{isEditing ? 'Update Pengajuan Izin/Cuti' : 'Form Pengajuan Izin/Cuti'}</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-6">{isEditing ? 'Update Pengajuan Izin' : 'Form Pengajuan Izin'}</h3>
 
           <form onSubmit={handleSubmitIzin} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jenis Izin/Cuti
+                  Jenis Izin
                 </label>
-                <select 
+                <select
                   className="w-full px-4 text-black py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
                   value={jenisIzin}
                   onChange={(e) => setJenisIzin(e.target.value)}
@@ -316,41 +428,84 @@ export default function IzinPage() {
                   <option value="izin">Izin</option>
                   <option value="sakit">Sakit</option>
                   <option value="cuti">Cuti</option>
+                  <option value="lembur">Lembur</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mulai
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={tanggalMulai}
-                    min={`${new Date().getFullYear()}-01-01`}
-                    max={`${new Date().getFullYear()}-12-31`}
-                    onChange={(e) => setTanggalMulai(e.target.value)}
-                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
-                    disabled={isEditing}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Selesai
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={tanggalSelesai}
-                    min={`${new Date().getFullYear()}-01-01`}
-                    max={`${new Date().getFullYear()}-12-31`}
-                    onChange={(e) => setTanggalSelesai(e.target.value)}
-                    className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
-                    disabled={isEditing}
-                  />
-                </div>
-              </div>
+              {
+                jenisIzin != 'lembur' ?
+                  (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mulai
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={tanggalMulai}
+                            min={`${new Date().getFullYear()}-01-01`}
+                            max={`${new Date().getFullYear()}-12-31`}
+                            onChange={(e) => setTanggalMulai(e.target.value)}
+                            className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Selesai
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={tanggalSelesai}
+                            min={`${new Date().getFullYear()}-01-01`}
+                            max={`${new Date().getFullYear()}-12-31`}
+                            onChange={(e) => setTanggalSelesai(e.target.value)}
+                            className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )
+                  :
+                  (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Mulai
+                          </label>
+                          <input
+                            type="time"
+                            required
+                            value={lemburMulai}
+                            min='17:00:00'
+                            max='23:59:59'
+                            onChange={(e) => setLemburMulai(e.target.value)}
+                            className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Selesai
+                          </label>
+                          <input
+                            type="time"
+                            required
+                            value={lemburSelesai}
+                            min='18:00:00'
+                            max='23:59:59'
+                            onChange={(e) => setLemburSelesai(e.target.value)}
+                            className="w-full px-4 py-2 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )
+              }
+
+
             </div>
 
             <div>
@@ -421,7 +576,7 @@ export default function IzinPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tanggal/Jam</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Jenis</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keterangan</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
@@ -438,10 +593,10 @@ export default function IzinPage() {
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-800">
-                          {new Date(item.tanggal_mulai).toLocaleDateString('id-ID')}
+                          {item.tanggal_mulai != '' && item.tanggal_mulai != null ? new Date(item.tanggal_mulai).toLocaleDateString('id-ID').replaceAll('/', '-') : item.lembur_mulai}
                         </div>
                         <div className="text-xs text-gray-500">
-                          s/d {new Date(item.tanggal_selesai).toLocaleDateString('id-ID')}
+                          s/d {item.tanggal_selesai != '' && item.tanggal_selesai != null ? new Date(item.tanggal_selesai).toLocaleDateString('id-ID').replaceAll('/', '-') : item.lembur_selesai}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -456,14 +611,14 @@ export default function IzinPage() {
                       <td className="px-6 py-4">
                         {item.status === 'pending' && (
                           <div className="flex gap-3">
-                            <button 
+                            <button
                               onClick={() => handleEdit(item)}
                               className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 cursor-pointer"
                             >
                               <FontAwesomeIcon icon={faEdit} className="text-xs" />
                               Edit
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleCancelIzin(item.id)}
                               className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center gap-1 cursor-pointer"
                             >

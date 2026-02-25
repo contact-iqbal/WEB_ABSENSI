@@ -16,6 +16,7 @@ interface config {
   tunjangan_makan?: any,
   potongan_alpha?: any,
   potongan_terlambat?: any,
+  toleransi_potongan_terlambat?: any,
 }
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
@@ -32,6 +33,7 @@ export default function PengaturanPage() {
     tunjangan_makan: 0,
     potongan_alpha: 0,
     potongan_terlambat: 0,
+    toleransi_potongan_terlambat: 0
   })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploaded, setuploaded] = useState<{ file: File | null, fileName: string, isuploaded: boolean }>({ file: null, fileName: '', isuploaded: false });
@@ -124,7 +126,7 @@ export default function PengaturanPage() {
           <div className="bg-white rounded-lg shadow-md p-4">
             <nav className="space-y-1">
               {items.map((itm, index) => (
-                <button key={index + 1} className={`w-full text-left px-4 py-3 ${section === index + 1 ? 'bg-blue-50 text-blue-700 rounded-lg font-medium' : 'text-gray-700 hover:bg-gray-50 rounded-lg'}`} onClick={() => (Setsection(index + 1))}>
+                <button key={index + 1} className={`w-full text-left px-4 py-3 cursor-pointer ${section === index + 1 ? 'bg-blue-50 text-blue-700 rounded-lg font-medium' : 'text-gray-700 hover:bg-gray-50 rounded-lg'}`} onClick={() => (Setsection(index + 1))}>
                   {itm.section}
                 </button>
               ))}
@@ -312,7 +314,7 @@ export default function PengaturanPage() {
           {section == 3 &&
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Komponen Gaji
+                Komponen Tunjangan
               </h3>
 
               <div className="space-y-4">
@@ -353,6 +355,9 @@ export default function PengaturanPage() {
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Komponen Gaji
+                </h3>
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
@@ -389,6 +394,27 @@ export default function PengaturanPage() {
                     }
                     className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-800">Toleransi potongan terlambat</p>
+                    <p className="text-sm text-gray-600">Dalam Persen</p>
+                  </div>
+                  <div className="flex flex-row w-32 justify-items-center items-center gap-1">
+                    <input
+                      type="number"
+                      placeholder="0"
+                      defaultValue={Number(configdata?.toleransi_potongan_terlambat ?? '')}
+                      onChange={(e) =>
+                        SetpendingUpdate(prev => ({
+                          ...prev,
+                          toleransi_potongan_terlambat: e.target.value
+                        }))
+                      }
+                      className="w-full px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-black">%</p>
+                  </div>
                 </div>
               </div>
             </div>
