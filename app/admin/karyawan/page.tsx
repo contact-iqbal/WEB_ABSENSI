@@ -104,9 +104,9 @@ export default function KaryawanPage() {
   useEffect(() => {
     fetchkaryawan();
   }, [filterStatus, searchTerm]);
-  useEffect(() => {
-    console.log(pendingUpdate)
-  }, [pendingUpdate])
+  // useEffect(() => {
+  //   console.log(pendingUpdate)
+  // }, [pendingUpdate])
 
   const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>, id: Number) => {
     if (e.target.files && e.target.files[0]) {

@@ -38,10 +38,11 @@ export async function POST(request: NextRequest) {
             tunjangan_makan,
             potongan_alpha,
             potongan_terlambat,
-            toleransi_potongan_terlambat
+            toleransi_potongan_terlambat,
+            upah_lembur
         } = await request.json();
 
-        await pool.execute(`UPDATE config SET nama_perusahaan = ?, alamat_perusahaan = ?, no_telp_perusahaan = ?, email_perusahaan = ?, jam_masuk = ?, jam_pulang = ?, toleransi_telat = ?, tunjangan_transport = ?, tunjangan_makan = ?, potongan_alpha = ?, potongan_terlambat = ?, toleransi_potongan_terlambat = ? LIMIT 1`, [nama_perusahaan, alamat_perusahaan,no_telp_perusahaan,email_perusahaan,jam_masuk,jam_pulang,toleransi_telat, tunjangan_transport, tunjangan_makan, potongan_alpha, potongan_terlambat, toleransi_potongan_terlambat])
+        await pool.execute(`UPDATE config SET nama_perusahaan = ?, alamat_perusahaan = ?, no_telp_perusahaan = ?, email_perusahaan = ?, jam_masuk = ?, jam_pulang = ?, toleransi_telat = ?, tunjangan_transport = ?, tunjangan_makan = ?, potongan_alpha = ?, potongan_terlambat = ?, toleransi_potongan_terlambat = ?, upah_lembur = ? LIMIT 1`, [nama_perusahaan, alamat_perusahaan,no_telp_perusahaan,email_perusahaan,jam_masuk,jam_pulang,toleransi_telat, tunjangan_transport, tunjangan_makan, potongan_alpha, potongan_terlambat, toleransi_potongan_terlambat, upah_lembur])
 
         return NextResponse.json({
             success: true,

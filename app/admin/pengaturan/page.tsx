@@ -1,5 +1,5 @@
 'use client'
-import { showInfo, showSuccess } from "@/lib/sweetalert";
+import { showError, showInfo, showSuccess, showWarning } from "@/lib/sweetalert";
 import { faTrash, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -17,11 +17,12 @@ interface config {
   potongan_alpha?: any,
   potongan_terlambat?: any,
   toleransi_potongan_terlambat?: any,
+  upah_lembur?: any
 }
 export default function PengaturanPage() {
   const [section, Setsection] = useState<Number | null>(1)
   const [configdata, Setconfigdata] = useState<config | null>(null)
-  let [pendingUpdate, SetpendingUpdate] = useState<config>({
+  const [pendingUpdate, SetpendingUpdate] = useState<config>({
     nama_perusahaan: '',
     alamat_perusahaan: '',
     no_telp_perusahaan: '',
@@ -33,10 +34,12 @@ export default function PengaturanPage() {
     tunjangan_makan: 0,
     potongan_alpha: 0,
     potongan_terlambat: 0,
-    toleransi_potongan_terlambat: 0
+    toleransi_potongan_terlambat: 0,
+    upah_lembur: 0
   })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploaded, setuploaded] = useState<{ file: File | null, fileName: string, isuploaded: boolean }>({ file: null, fileName: '', isuploaded: false });
+  const isitchanged = configdata != null && configdata !== pendingUpdate || uploaded.isuploaded === true
 
   const items = [
     {
@@ -110,6 +113,31 @@ export default function PengaturanPage() {
     const file = event.target.files?.[0];
     if (file) {
       setuploaded({ file: file, fileName: file.name, isuploaded: true });
+    }
+  }
+  const importfromsql = async () => {
+    const file = uploaded.file
+    if (!file) return
+
+    if (!file.name.endsWith(".sql")) {
+      showWarning('Not allowed',"Hanya file .sql yang diperbolehkan");
+      return;
+    }
+    const formdata = new FormData()
+    formdata.append('sqlFile', file)
+    const waitresult = await fetch('/api/admin/config/import_sql', {
+      method: 'POST',
+      body: formdata
+    })
+    const actualresult = await waitresult.json()
+    if (actualresult.success) {
+      showSuccess('Sukess', 'Database telah sukses diganti dari file!')
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setuploaded({ file: null, fileName: '', isuploaded: false });
+    } else {
+      showError('Gagal', 'Cek konsol')
     }
   }
 
@@ -416,6 +444,24 @@ export default function PengaturanPage() {
                     <p className="text-black">%</p>
                   </div>
                 </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-800">Upah Lembur</p>
+                    <p className="text-sm text-gray-600">Per Jam</p>
+                  </div>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    defaultValue={Number(configdata?.upah_lembur ?? '')}
+                    onChange={(e) =>
+                      SetpendingUpdate(prev => ({
+                        ...prev,
+                        upah_lembur: e.target.value
+                      }))
+                    }
+                    className="w-32 px-3 py-2 border text-gray-700 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           }
@@ -469,24 +515,33 @@ export default function PengaturanPage() {
             ''
           }
           <div className="flex justify-end gap-3">
-            <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
-              Batal
-            </button>
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              onClick={() => {
-                if (uploaded.isuploaded) {
-                  showInfo('info wirr', `Info mokel wir`)
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                  }
-                  setuploaded({ file: null, fileName: '', isuploaded: false });
-                } else {
-                  sendupdate()
+            {isitchanged ?
+              <>
+                {isitchanged && uploaded.isuploaded != true ?
+                  <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    onClick={() => (fetchconfig())}
+                  >
+                    Batal
+                  </button>
+                  :
+                  ''
                 }
-              }}
-            >
-              Simpan Perubahan
-            </button>
+
+                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  onClick={() => {
+                    if (uploaded.isuploaded) {
+                      importfromsql()
+                    } else {
+                      sendupdate()
+                    }
+                  }}
+                >
+                  Simpan Perubahan
+                </button>
+              </>
+              :
+              ''
+            }
           </div>
         </div>
       </div>

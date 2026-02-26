@@ -5,8 +5,16 @@ import { json } from "stream/consumers";
 
 export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get("search");
+    let query = 'SELECT * FROM users WHERE type != "owner"'
+    const params: any[] = [];
+    if (search) {
+      query += ` AND username LIKE ?`;
+      params.push(`%${search}%`);
+    }
     const [result] = await pool.execute(
-      'SELECT * FROM users WHERE type != "owner"',
+      query,params
     );
     return NextResponse.json(
       {

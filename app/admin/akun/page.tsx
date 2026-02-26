@@ -30,7 +30,7 @@ export default function KaryawanPage() {
   const [editing, Setediting] = useState<null | Number>(0);
   const [selectedAccounts, setSelectedAccounts] = useState<Number[]>([]);
   const [showCheckboxes, setShowCheckboxes] = useState(false);
-  const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   let [pendingUpdate, SetpendingUpdate] = useState<pendingUpdate>({
     id: 0,
@@ -44,9 +44,11 @@ export default function KaryawanPage() {
   })
   useEffect(() => {
     fetchkaryawan()
-  }, [])
+  }, [searchTerm])
   const fetchkaryawan = async () => {
-    const responses = await fetch('/api/admin/account')
+    const params = new URLSearchParams();
+    if (searchTerm) params.append("search", searchTerm);
+    const responses = await fetch(`/api/admin/account?${params.toString()}`)
     const result = await responses.json();
 
     if (result.success) {
@@ -247,11 +249,6 @@ export default function KaryawanPage() {
   }
 
   const handleMassDelete = async () => {
-    // const confirm = await showConfirm(
-    //   "Konfirmasi Hapus",
-    //   `Apakah Anda yakin ingin menghapus ${selectedAccounts.length} akun yang dipilih?`
-    // );
-    let confirm;
     Swal.fire({
       title: 'Apakah kamu yakin?',
       text: 'Akun yang dihapus, akan menghapus rekap absen, gaji, dan data karyawan tersebut!',
@@ -262,11 +259,9 @@ export default function KaryawanPage() {
       allowEscapeKey: false,
       timer: 3000,
       timerProgressBar: true,
-      // didOpen: () => {
-      // }
     }).then(async (result) => {
       if (result.dismiss === Swal.DismissReason.timer) {
-        confirm = await Swal.fire({
+        await Swal.fire({
           title: 'Konfirmasi',
           text: `Apakah Anda yakin ingin menghapus ${selectedAccounts.length} akun yang dipilih?`,
           icon: 'info',
@@ -296,34 +291,9 @@ export default function KaryawanPage() {
               showError("Error", "Gagal menghubungi server.");
             }
           } 
-          // else if (result.dismiss === Swal.DismissReason.cancel) {
-          //   Swal.fire('Cancelled', 'You clicked the cancel button.', 'error');
-          // }
         });
       }
     });
-    // if (confirm.isConfirmed) {
-    //   try {
-    //     const res = await fetch('/api/admin/account', {
-    //       method: 'POST',
-    //       headers: { 'Content-Type': 'application/json' },
-    //       body: JSON.stringify({
-    //         action: 'mass_delete',
-    //         ids: selectedAccounts,
-    //       }),
-    //     });
-    //     const result = await res.json();
-    //     if (result.success) {
-    //       showSuccess("Sukses", result.message);
-    //       setSelectedAccounts([]);
-    //       fetchkaryawan();
-    //     } else {
-    //       showError("Gagal", result.error || result.message);
-    //     }
-    //   } catch (err) {
-    //     showError("Error", "Gagal menghubungi server.");
-    //   }
-    // }
   };
 
   const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
@@ -403,7 +373,7 @@ export default function KaryawanPage() {
               targetId = idConflict.id;
             } else if (result.isDenied) {
               skipCount++;
-              continue; // Skip
+              continue; 
             } else {
               action = 'create'; // Create new
             }
@@ -425,7 +395,7 @@ export default function KaryawanPage() {
               targetId = usernameConflict.id; // Target the ID of the user with the conflicting username
             } else {
               skipCount++;
-              continue; // Skip
+              continue; 
             }
           }
 
@@ -572,6 +542,7 @@ export default function KaryawanPage() {
                 type="text"
                 placeholder="Cari karyawan..."
                 className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {setSearchTerm(e.target.value)}}
               />
             </div>
             {/* <select className="px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Get config for calculation
-      const [config]: any = await pool.execute('SELECT jam_masuk, toleransi_telat, tunjangan_makan, tunjangan_transport, potongan_alpha, potongan_terlambat, toleransi_potongan_terlambat FROM config LIMIT 1');
+      const [config]: any = await pool.execute('SELECT jam_masuk, toleransi_telat, tunjangan_makan, tunjangan_transport, potongan_alpha, potongan_terlambat, toleransi_potongan_terlambat, upah_lembur FROM config LIMIT 1');
       const jamMasukConfig = config[0]?.jam_masuk || '08:00:00';
       const toleransiTelat = config[0]?.toleransi_telat || 0;
       const tunjanganMakanPerHari = config[0]?.tunjangan_makan || 0;
@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
       const potonganTerlambatPerMenit = config[0]?.potongan_terlambat || 0;
       const ToleransipotonganTerlambatPerMenit = config[0]?.toleransi_potongan_terlambat || 0;
       const toleransipotongan = ToleransipotonganTerlambatPerMenit / 100
+      const upahgaji = config[0]?.upah_lembur
 
       // Calculate salary for each employee
       for (const k of karyawan) {
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
             if (record.status === 'terlambat' && record.absen_masuk) {
               const [hConfig, mConfig] = jamMasukConfig.split(':').map(Number);
               const [hAbsen, mAbsen] = record.absen_masuk.split(':').map(Number);
-              
+
               const minutesConfig = hConfig * 60 + (mConfig + Number(toleransiTelat));
               const minutesAbsen = hAbsen * 60 + mAbsen;
               const minutesLate = minutesAbsen - minutesConfig;
@@ -178,23 +179,67 @@ export async function POST(request: NextRequest) {
             }
           }
         });
-        
-        if(totalPotonganTerlambat > k.gaji_pokok) {
+
+        if (totalPotonganTerlambat > k.gaji_pokok) {
           totalPotonganTerlambat = k.gaji_pokok
         }
 
+        // cek lembur ygy
+        const [lemburcheck]: any = await pool.execute(
+          'SELECT * FROM izin WHERE jenis_izin = "lembur" AND status = "disetujui" AND karyawan_id = ?',
+          [k.id]
+        )
+
+        let upah_lembur = 0;
+        let berapajamlembur = '';
+
+        lemburcheck.forEach((ada: any) => {
+          const [hLemburM, mLemburM] = ada.lembur_mulai.split(':').map(Number);
+          const [hLemburS, mLemburS] = ada.lembur_selesai.split(':').map(Number);
+          const mulailemburinsecond = hLemburM * 3600 + mLemburM * 60
+          const selesailemburinsecond = hLemburS * 3600 + mLemburS * 60
+          function secondsToHms(totalSeconds: number) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            // Pad with leading zeros if necessary
+            const formatTwoDigits = (num: number) => num.toString().padStart(2, '0');
+
+            return `${formatTwoDigits(hours)}:${formatTwoDigits(minutes)}:${formatTwoDigits(seconds)}`;
+          }
+          function calculateTimeDifference(startTime: any, endTime: any) {
+            const startSeconds = startTime;
+            const endSeconds = endTime;
+
+            const differenceSeconds = endSeconds - startSeconds;
+
+            // Handle cases where the time difference might be negative (e.g., crossing midnight)
+            if (differenceSeconds < 0) {
+              // Treat as if it crosses midnight (add 24 hours in seconds)
+              const secondsInADay = 24 * 3600;
+              return secondsToHms(differenceSeconds + secondsInADay);
+            }
+
+            return secondsToHms(differenceSeconds);
+          }
+          berapajamlembur = calculateTimeDifference(mulailemburinsecond, selesailemburinsecond)
+          const [lemburjamh, lemburjamm] = berapajamlembur.split(':').map(Number)
+          upah_lembur = lemburjamh * upahgaji + Math.ceil(lemburjamm / 60 * upahgaji)
+        });
+
         const totalTunjanganMakan = daysPresent * tunjanganMakanPerHari;
         const totalTunjanganTransport = daysPresent * tunjanganTransportPerHari;
-        const total_tunjangan = totalTunjanganMakan + totalTunjanganTransport;
+        const total_tunjangan = totalTunjanganMakan + totalTunjanganTransport + upah_lembur;
 
         const totalPotonganAlpha = alphaCount * potonganAlphaPerHari;
         let total_potongan = totalPotonganAlpha + totalPotonganTerlambat;
-        
+
         // Ensure total deductions don't exceed base salary (prevent negative net salary)
         if (total_potongan > k.gaji_pokok) {
           total_potongan = k.gaji_pokok;
         }
-        
+
         const gaji_bersih = k.gaji_pokok + total_tunjangan - total_potongan;
 
         // Insert salary record
@@ -219,8 +264,14 @@ export async function POST(request: NextRequest) {
             [gajiResult.insertId, totalTunjanganTransport, `${daysPresent} hari kerja`],
           );
         }
+        if (upah_lembur > 0) {
+          await pool.execute(
+            `INSERT INTO tunjangan (gaji_id, jenis_tunjangan, jumlah, keterangan) 
+                        VALUES (?, 'Upah Lembur', ?, ?)`,
+            [gajiResult.insertId, upah_lembur, `Lembur selama ${berapajamlembur}`]
+          )
+        }
 
-        // Add potongan records
         if (totalPotonganAlpha > 0) {
           await pool.execute(
             `INSERT INTO potongan_gaji (gaji_id, jenis_potongan, jumlah, keterangan)

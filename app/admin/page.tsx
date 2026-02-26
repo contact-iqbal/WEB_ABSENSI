@@ -186,6 +186,8 @@ export default function DashboardPage() {
                         ? "bg-yellow-100 text-yellow-700"
                         : absen.status === "izin"
                           ? "bg-blue-100 text-blue-700"
+                          : absen.status === "cuti"
+                          ? "bg-blue-100 text-blue-700"
                           : absen.status === "sakit"
                             ? "bg-orange-100 text-orange-700"
                             : "bg-red-100 text-red-700"

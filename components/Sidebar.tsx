@@ -129,12 +129,12 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden">
               {authResult != null &&
-                (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
+                (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" className='w-full h-full object-cover' /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
               }
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">{authResult && (authResult.username)}</p>
-              <p className="text-xs text-gray-400">Online</p>
+              <p className="text-xs text-gray-400">{authResult && authResult.accountAccess}</p>
             </div>
             <button onClick={logout} className='cursor-pointer'>
               <FontAwesomeIcon icon={faSignOutAlt} />

@@ -10,7 +10,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import pool from "@/lib/db";
-import { showError, showSuccess } from "@/lib/sweetalert";
+import { showError, showInfo, showSuccess } from "@/lib/sweetalert";
+import { formatdateyyyymmdd } from "@/lib/aliases";
 
 interface absen {
   id: number;
@@ -55,10 +56,60 @@ export default function AbsensiPage() {
     keterangan: null,
     override: ''
   })
+  const [editing, Setediting] = useState<null | Number>(0);
+  const [updateabsen, setupdateabsen] = useState({
+    id: 0,
+    absen_masuk: '',
+    absen_keluar: '',
+    status: '',
+    keterangan: '',
+    tanggal: ''
+  })
+  const handleEditSave = (k: any) => {
+    if (editing === k.id) {
+      if (k.id != updateabsen.id || k.absen_masuk != updateabsen.absen_masuk || k.absen_keluar != updateabsen.absen_keluar || k.status != updateabsen.status) {
+        sendtheupdate(updateabsen)
+      }
+      Setediting(null)
+      getabsensi()
+    } else {
+      Setediting(k.id)
+      setupdateabsen({
+        id: k.id,
+        absen_masuk: k.absen_masuk,
+        absen_keluar: k.absen_keluar,
+        status: k.status,
+        keterangan: k.keterangan,
+        tanggal: formatdateyyyymmdd(k.tanggal)
+      })
+    }
+  }
+  //absen_masuk, absen_keluar, status, keterangan, karyawan_id, tanggal
+  const sendtheupdate = async (update: any) => {
+    const updatestuff = await fetch('/api/admin/absensi', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        karyawan_id: update.id,
+        absen_masuk: update.absen_masuk,
+        absen_keluar: update.absen_keluar,
+        status: update.status,
+        keterangan: update.keterangan,
+        tanggal: update.tanggal
+      })
+    });
+    const resultupdate = await updatestuff.json()
+    if (resultupdate.success) {
+      await showSuccess("Sukses", `${resultupdate.message}`)
+    } else if (!resultupdate.success == false && !resultupdate.error) {
+      await showInfo("Huh?", `${resultupdate.message || resultupdate.error || resultupdate.toString()}`)
+    }
+  }
 
   useEffect(() => {
     getabsensi();
-    console.log(filterDate)
     akun();
   }, [filterDate, filterStatus, searchTerm]);
 
@@ -115,13 +166,15 @@ export default function AbsensiPage() {
         })
         getabsensi()
       } else {
-        showError('Error',result.message)
+        showError('Error', result.message)
       }
     } catch (e) {
       console.log(e)
     }
-
   }
+  useEffect(() => (
+    console.log(updateabsen)
+  ), [updateabsen])
   return (
     <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
@@ -313,6 +366,7 @@ export default function AbsensiPage() {
               <option>Hadir</option>
               <option>Terlambat</option>
               <option>Izin</option>
+              <option>Cuti</option>
               <option>Sakit</option>
               <option>Alpha</option>
             </select>
@@ -348,52 +402,86 @@ export default function AbsensiPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {absensi.length > 0 ? (
-                absensi.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-800 whitespace-nowrap">
-                      {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/', '-')}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-gray-800">{item.nama}</p>
-                      <p className="text-xs text-gray-600">{item.jabatan}</p>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {item.absen_masuk
-                        ? item.absen_masuk.substring(0, 5)
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {item.absen_keluar
-                        ? item.absen_keluar.substring(0, 5)
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${item.status === "hadir"
-                          ? "bg-green-100 text-green-700"
-                          : item.status === "terlambat"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : item.status === "izin"
-                              ? "bg-blue-100 text-blue-700"
-                              : item.status === "sakit"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-red-100 text-red-700"
-                          }`}
-                      >
-                        {item.status.charAt(0).toUpperCase() +
-                          item.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {item.keterangan || "-"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                absensi.map((item, index) => {
+                  const isEditing = editing == item.id
+                  return (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-gray-800 whitespace-nowrap">
+                        {new Date(item.tanggal).toLocaleDateString("id-ID").replaceAll('/', '-')}
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-medium text-gray-800">{item.nama}</p>
+                        <p className="text-xs text-gray-600">{item.jabatan}</p>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {isEditing ?
+                          <input type="time" defaultValue={updateabsen.absen_masuk} className="px-4 py-2 text-black border border-2 rounded-lg"
+                            onChange={(e) => { setupdateabsen({ ...updateabsen, absen_masuk: e.target.value + ':00' }) }}
+                          />
+                          :
+                          <p>{item.absen_masuk
+                            ? item.absen_masuk.substring(0, 5)
+                            : "-"}</p>
+                        }
+
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {isEditing ?
+                          <input type="time" defaultValue={updateabsen.absen_keluar} className="px-4 py-2 text-black border border-2 rounded-lg"
+                            onChange={(e) => { setupdateabsen({ ...updateabsen, absen_keluar: e.target.value + ':00' }) }}
+                          />
+                          :
+                          <p>{item.absen_keluar
+                            ? item.absen_keluar.substring(0, 5)
+                            : "-"}</p>
+                        }
+
+                      </td>
+                      <td className="px-6 py-4">
+                        {isEditing ?
+                          <select name="status" id="status" defaultValue={updateabsen.status} className="px-4 py-2 text-black border border-2 rounded-lg"
+                            onChange={(e) => { setupdateabsen({ ...updateabsen, status: e.target.value }) }}
+                          >
+                            <option value="hadir">Hadir</option>
+                            <option value="terlambat">Terlambat</option>
+                            <option value='izin'>Izin</option>
+                            <option value='cuti'>Cuti</option>
+                            <option value='sakit'>Sakit</option>
+                            <option value='alpha'>Alpha</option>
+                          </select>
+                          :
+                          <span
+                            className={`px-3 py-1 text-xs font-semibold rounded-full ${item.status === "hadir"
+                              ? "bg-green-100 text-green-700"
+                              : item.status === "terlambat"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : item.status === "izin"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : item.status === "sakit"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : item.status === "cuti"
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-red-100 text-red-700"
+                              }`}
+                          >
+                            {item.status.charAt(0).toUpperCase() +
+                              item.status.slice(1)}
+                          </span>
+                        }
+
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {item.keterangan || "-"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button className="text-neutral-100 bg-blue-600 px-4 py-2 hover:bg-blue-500 rounded-lg font-medium text-sm transition"
+                          onClick={() => (handleEditSave(item))}
+                        >
+                          {isEditing ? 'Save' : 'Edit'}
+                        </button>
+                      </td>
+                    </tr>)
+                })
               ) : (
                 <tr>
                   <td

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const [approvedIzin]: any = await pool.execute(`
       SELECT i.karyawan_id, i.jenis_izin, i.keterangan 
       FROM izin i
-      WHERE i.status = 'disetujui'
+      WHERE i.status = 'disetujui' AND i.jenis_izin != 'lembur'
       AND ? BETWEEN i.tanggal_mulai AND i.tanggal_selesai
       AND i.karyawan_id NOT IN (SELECT id FROM absensi WHERE tanggal = ?)
     `, [viewDate, viewDate]);
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
     if (override.length > 0) {
       let absn_klr
-      if (absen_keluar === ''){
+      if (absen_keluar === '') {
         absn_klr = null
       } else {
         absn_klr = absen_keluar
@@ -187,12 +187,20 @@ export async function PUT(request: NextRequest) {
       keterangan,
     } = await request.json();
 
-    await pool.execute(
+    console.log(karyawan_id,
+      tanggal,
+      absen_masuk,
+      absen_keluar,
+      status,
+      keterangan)
+
+    const debug = await pool.execute(
       `UPDATE absensi 
              SET absen_masuk = ?, absen_keluar = ?, status = ?, keterangan = ?
              WHERE id = ? AND tanggal = ?`,
       [absen_masuk, absen_keluar, status, keterangan, karyawan_id, tanggal],
     );
+    console.log(debug)
 
     return NextResponse.json(
       {

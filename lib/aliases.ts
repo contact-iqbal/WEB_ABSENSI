@@ -46,4 +46,12 @@ export function formatIndoPhone(input: String) {
     return `+62-${p1}-${p2}-${p3}`;
 }
 
+export function formatdateyyyymmdd(input?: string) {
+    return new Date(String(input)).toLocaleDateString('en-CA', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    })
+}
 
