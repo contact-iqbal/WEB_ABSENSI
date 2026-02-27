@@ -80,7 +80,7 @@ export default function Sidebar({ isOpen, onClose }: AdminSidebarProps) {
   if (authResult === null || authResult.accountAccess === 'pegawai') {
     filteredbasedonaccess = [{ title: 'Dashboard', icon: faChartLine, href: '/admin' },]
   } else {
-    filteredbasedonaccess = authResult && authResult.accountAccess === 'hrd' ? menuItems.filter(item => ['Dashboard', 'Absensi', 'Izin', 'Ceklog'].includes(item.title)) : menuItems
+    filteredbasedonaccess = authResult && authResult.accountAccess === 'hrd' ? menuItems.filter(item => ['Dashboard', 'Absensi', 'Izin','Data Karyawan','Akun Karyawan', 'Ceklog'].includes(item.title)) : menuItems
   }
 
   return (

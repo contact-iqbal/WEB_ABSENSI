@@ -639,21 +639,21 @@ export default function KaryawanPage() {
                   }
                   <td className="flex px-6 py-4 justify-end gap-1">
                     {k.id !== 1 && (
-                      <>
-                        <button className='bg-blue-500 p-1.5 hover:bg-blue-600 hover:scale-105 rounded-lg transition cursor-pointer'
+                      <div>
+                        <button className='bg-blue-500 px-4 py-2 hover:bg-blue-600 hover:scale-105 rounded-tl-lg rounded-bl-lg transition cursor-pointer'
                           onClick={() => (handleEditSave(k))}
                         >
                           {editing == k.id ?
-                            <div className='flex flex-row justify-center items-center w-fit gap-2'><p>Apply</p><FontAwesomeIcon icon={faSave} /></div>
+                            <div className='flex flex-row justify-center items-center w-fit gap-2'><p>Save</p><FontAwesomeIcon icon={faSave} /></div>
                             :
-                            <FontAwesomeIcon icon={faPencil} />
+                            <div className='flex flex-row justify-center items-center w-fit gap-2'><p>Edit</p><FontAwesomeIcon icon={faPencil} /></div>
                           }
 
                         </button>
-                        <button className='bg-red-500 p-1.5 hover:bg-red-600 hover:scale-105 rounded-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
+                        <button className='bg-red-500 px-4 py-2 hover:bg-red-600 hover:scale-105 rounded-tr-lg rounded-br-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
-                      </>
+                      </div>
                     )}
                   </td>
                 </tr>

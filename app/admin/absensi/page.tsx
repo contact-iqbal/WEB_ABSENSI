@@ -43,7 +43,7 @@ export default function AbsensiPage() {
     tidak_hadir: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDate, setFilterDate] = useState('');
+  const [filterDate, setFilterDate] = useState(new Date().toLocaleDateString('en-CA'));
   const [filterStatus, setFilterStatus] = useState("Semua Status");
   const [showModal, setShowModal] = useState(false);
   const [akunkaryawan, setakunkaryawan] = useState<akun[]>([]);

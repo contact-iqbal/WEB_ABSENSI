@@ -100,18 +100,36 @@ export default function KaryawanPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("-");
   const [uploadingId, setUploadingId] = useState<Number | null>(null);
+  const router = useRouter()
 
   useEffect(() => {
     fetchkaryawan();
   }, [filterStatus, searchTerm]);
-  // useEffect(() => {
-  //   console.log(pendingUpdate)
-  // }, [pendingUpdate])
+  const [authResult, setAuthResult] = useState<{ accountAccess: any } | null>(null);
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/session');
+      const result = await response.json();
+
+      if (result.success) {
+        setAuthResult(result);
+        if (result.accountAccess != 'owner' && result.accountAccess != 'hrd') {
+          router.push('/pegawai');
+        }
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+    }
+  };
 
   const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>, id: Number) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       // 5MB limit check
       if (file.size > 5 * 1024 * 1024) {
         showError('Gagal', 'Ukuran file terlalu besar (Maksimal 5MB)');
@@ -126,7 +144,7 @@ export default function KaryawanPage() {
           const res = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               file: reader.result,
               folder: 'web_absensi/profile'
             })
@@ -486,7 +504,7 @@ export default function KaryawanPage() {
                   {/* Avatar Placeholder */}
                   <div className="relative group/avatar">
                     {pendingUpdate.id === k.id && pendingUpdate.value?.profile_picture ? (
-                       <img className="h-14 w-14 rounded-full object-cover flex items-center justify-center text-white font-bold text-xl shadow-inner border-2 border-blue-100" src={pendingUpdate.value.profile_picture.toString()} alt="preview" />
+                      <img className="h-14 w-14 rounded-full object-cover flex items-center justify-center text-white font-bold text-xl shadow-inner border-2 border-blue-100" src={pendingUpdate.value.profile_picture.toString()} alt="preview" />
                     ) : k.profile_picture ? (
                       <img className="h-14 w-14 rounded-full object-cover flex items-center justify-center text-white font-bold text-xl shadow-inner" src={k.profile_picture.toString()} alt={String(k.nama)} />
                     ) : (
@@ -539,7 +557,7 @@ export default function KaryawanPage() {
                         {isEditing ? (
                           <input
                             type="text"
-                            className="block text-neutral-700 w-full text-xm font-semibold border border-blue-300 rounded-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="block text-neutral-700 w-full text-xm font-semibold border border-blue-300 rounded-sm focus:ring-2 focus:ring-blue-500 outline-none px-1"
                             value={String(pendingUpdate.value?.NIK ?? "")}
                             onChange={(e) =>
                               SetpendingUpdate((prev) => ({
@@ -583,7 +601,7 @@ export default function KaryawanPage() {
                       <p className="text-xs text-gray-500 mb-1">Position</p>
                       {isEditing ? (
                         <select
-                          className="w-full text-neutral-700 border border-gray-300 rounded-lg text-sm"
+                          className="w-full text-neutral-700 border border-gray-300 rounded-md py-2 rounded-lg text-sm"
                           value={String(pendingUpdate.value?.jabatan ?? "")}
                           onChange={(e) =>
                             SetpendingUpdate((prev) => ({
@@ -604,7 +622,7 @@ export default function KaryawanPage() {
                       <p className="text-xs text-gray-500 mb-1">Division</p>
                       {isEditing ? (
                         <select
-                          className="w-full text-neutral-700 border border-gray-300 rounded-lg text-sm"
+                          className="w-full text-neutral-700 border border-gray-300 rounded-md py-2 text-sm"
                           value={String(pendingUpdate.value?.devisi ?? "")}
                           onChange={(e) =>
                             SetpendingUpdate((prev) => ({
@@ -675,7 +693,7 @@ export default function KaryawanPage() {
                           <option value="konghucu">Konghucu</option>
                         </select>
                       ) : (
-                        <p className="text-sm font-medium text-gray-700">{k.agama === '' || k.agama === null ? '-' : k.agama}</p>
+                        <p className="text-sm font-medium text-gray-700">{k.agama === '' || k.agama === null || k.agama === 'default' ? '-' : k.agama}</p>
                       )}
                     </div>
                     <div className="col-span-2">
@@ -685,7 +703,7 @@ export default function KaryawanPage() {
                           <>
                             <input
                               type="text"
-                              className="text-sm font-medium text-gray-700 w-[90px] border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              className="text-sm font-medium text-gray-700 w-[90px] border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
                               value={String(pendingUpdate.value?.tempat_lahir ?? '')}
                               onChange={(e) =>
                                 SetpendingUpdate((prev) => ({
@@ -695,7 +713,7 @@ export default function KaryawanPage() {
                               }
                             />
                             ,
-                            <input type="date" className="text-black text-sm font-medium text-gray-700 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            <input type="date" className="text-black text-sm font-medium text-gray-700 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
                               value={new Date(String(pendingUpdate.value?.tanggal_lahir)).toLocaleDateString('en-CA').replaceAll('/', '-')}
                               onChange={(e) =>
                                 SetpendingUpdate((prev) => ({
@@ -760,7 +778,7 @@ export default function KaryawanPage() {
                       {isEditing ? (
                         <input
                           type="text"
-                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-md py-1 focus:ring-2 focus:ring-blue-500 outline-none"
                           value={String(pendingUpdate.value?.email ?? "")}
                           onChange={(e) =>
                             SetpendingUpdate((prev) => ({
@@ -778,7 +796,7 @@ export default function KaryawanPage() {
                       {isEditing ? (
                         <input
                           type="text"
-                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="text-sm font-medium text-gray-700 w-full border border-blue-300 rounded-md py-1 focus:ring-2 focus:ring-blue-500 outline-none"
                           value={String(pendingUpdate.value?.no_telp ?? "")}
                           onChange={(e) =>
                             SetpendingUpdate((prev) => ({
@@ -791,29 +809,33 @@ export default function KaryawanPage() {
                         <a href={`tel:${k.no_telp}`} className="text-sm font-medium text-blue-600 truncate">{k.no_telp === '' || k.no_telp === null ? '-' : formatIndoPhone(k.no_telp)}</a>
                       )}
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Salary</p>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          className="block text-neutral-700 w-full text-lg font-semibold border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                          value={String(pendingUpdate.value?.gaji_pokok ?? "")}
-                          onChange={(e) =>
-                            SetpendingUpdate((prev) => ({
-                              ...prev,
-                              value: { ...(prev.value ?? {}), gaji_pokok: e.target.value },
-                            }))
-                          }
-                        />
-                      ) : (
-                        <p className="text-sm font-bold text-gray-800">{k.gaji_pokok && new Intl.NumberFormat('id-ID', {
-                          style: 'currency',
-                          currency: 'IDR',
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(Number(k.gaji_pokok)) || "Not Set"}</p>
-                      )}
-                    </div>
+                    {
+                      authResult?.accountAccess === 'owner'  ?
+                        <div>
+                          <p className="text-xs text-gray-500">Salary</p>
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              className="block text-neutral-700 w-full text-lg font-semibold border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                              value={String(pendingUpdate.value?.gaji_pokok ?? "")}
+                              onChange={(e) =>
+                                SetpendingUpdate((prev) => ({
+                                  ...prev,
+                                  value: { ...(prev.value ?? {}), gaji_pokok: e.target.value },
+                                }))
+                              }
+                            />
+                          ) : (
+                            <p className="text-sm font-bold text-gray-800">{k.gaji_pokok && new Intl.NumberFormat('id-ID', {
+                              style: 'currency',
+                              currency: 'IDR',
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }).format(Number(k.gaji_pokok)) || "Not Set"}</p>
+                          )}
+                        </div>
+                        : ""
+                    }
                   </div>
                 </div>
               </div>

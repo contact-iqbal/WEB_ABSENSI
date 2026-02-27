@@ -17,8 +17,8 @@ export function comparePassword(password: string, hash: string): Promise<boolean
     return bcrypt.compare(password, hash);
 }
 
-export function generateToken(payload: TokenPayload): string {
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+export function generateToken(payload: TokenPayload, remember?: boolean): string {
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: remember ? '30d' : '7d' });
 }
 
 export function verifyToken(token: string): TokenPayload | null {

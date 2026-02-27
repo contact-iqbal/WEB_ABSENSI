@@ -27,10 +27,26 @@ export async function POST(request: NextRequest) {
                 )
             }
         } else if (requests == 'jam_keluar') {
-            const [result] = await pool.execute(
-                'UPDATE absensi SET absen_keluar = (STR_TO_DATE(? , "%H.%i")) WHERE id = ? AND tanggal = CURDATE()',
-                [absen_keluar, id]
+            const [cekizin]: any = await pool.execute(
+                `SELECT jenis_izin,lembur_selesai FROM izin WHERE karyawan_id = ? AND created_at >= CURDATE()
+                 AND created_at < CURDATE() + INTERVAL 1 DAY`,
+                [id]
             )
+            const islembur = String(absen_keluar).replaceAll('.', ':') + ':00' < cekizin[0]?.lembur_selesai
+            if (islembur) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Kamu memiliki izin untuk lembur hingga jam ${cekizin[0].lembur_selesai}`
+                    },
+                    { status: 500 }
+                )
+            } else {
+                await pool.execute(
+                    'UPDATE absensi SET absen_keluar = (STR_TO_DATE(? , "%H.%i")) WHERE id = ? AND tanggal = CURDATE()',
+                    [absen_keluar, id]
+                )
+            }
             return NextResponse.json(
                 {
                     success: true,
@@ -48,8 +64,8 @@ export async function POST(request: NextRequest) {
             )
         } else if (requests == 'fetch_all') {
             const [fetchabsenall] = await pool.execute('SELECT * FROM absensi WHERE id = ? ORDER BY tanggal DESC', [id])
-            const [statshadir]:any = await pool.execute('SELECT COUNT(*) AS hadir_result FROM absensi WHERE id = ? AND status = "hadir"', [id])
-            const [statsterlambat]:any = await pool.execute('SELECT COUNT(*) AS terlambat_result FROM absensi WHERE id = ? AND status = "terlambat"', [id])
+            const [statshadir]: any = await pool.execute('SELECT COUNT(*) AS hadir_result FROM absensi WHERE id = ? AND status = "hadir"', [id])
+            const [statsterlambat]: any = await pool.execute('SELECT COUNT(*) AS terlambat_result FROM absensi WHERE id = ? AND status = "terlambat"', [id])
             return NextResponse.json(
                 {
                     success: true,

@@ -60,18 +60,12 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (result.success) {
-        if (result.message) {
-          await showSuccess("Akun dibuat!", `${result.message}`);
-          setLoading(false);
-          router.refresh();
-        } else {
-          await showSuccess(
-            "Berhasil Login!",
-            `Selamat datang, ${result.user.real_name}!`,
-          );
-          setLoading(false);
-          router.push(result.user.type === "owner" ? "/admin" : "/pegawai");
-        }
+        await showSuccess(
+          "Berhasil Login!",
+          `Selamat datang, ${result.user.real_name}!`,
+        );
+        setLoading(false);
+        router.push(result.user.type === "owner" ? "/admin" : "/pegawai");
       } else {
         setLoading(false);
         await showError("Login Gagal", `${result.error}`);
@@ -138,15 +132,24 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+            <div>
+              <div className="relative text-black">
+                <input
+                  type='checkbox'
+                  onChange={(e) =>
+                    setFormData({ ...formData, rememberme: e.target.checked })
+                  }
+                /> ingat saya
+              </div>
+            </div>
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3.5 cursor-pointer rounded-lg font-bold text-white transition-all shadow-md ${
-                loading
+              className={`w-full py-3.5 cursor-pointer rounded-lg font-bold text-white transition-all shadow-md ${loading
                   ? "bg-neutral-400 cursor-not-allowed"
                   : "bg-neutral-800 hover:bg-neutral-800 active:scale-[0.98]"
-              }`}
+                }`}
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
@@ -161,7 +164,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-8 left-8 md:left-24 lg:left-32 right-8 flex justify-between items-center text-xs text-neutral-400">
+        <div className="md:left-24 lg:left-32 right-8 flex justify-between items-center text-xs text-neutral-400">
           <p>Copyright © 2026 DNA advertising</p>
         </div>
       </div>

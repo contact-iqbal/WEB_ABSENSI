@@ -1,14 +1,18 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faCalendarCheck, 
-  faClock, 
-  faCheckCircle, 
-  faTimesCircle, 
+import {
+  faCalendarCheck,
+  faClock,
+  faCheckCircle,
+  faTimesCircle,
   faInfoCircle,
   faSearch,
-  faEye
+  faEye,
+  faCheck,
+  faCross,
+  faPlus,
+  faX
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 import { showError, showSuccess, showConfirm, showImage } from '@/lib/sweetalert';
@@ -190,6 +194,7 @@ export default function IzinAdminPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Keterangan</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Aksi</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Bukti</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -224,37 +229,40 @@ export default function IzinAdminPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {item.status === 'pending' ? (
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-col">
                             <button
                               onClick={() => handleUpdateStatus(item.id, 'disetujui')}
-                              className="text-green-600 hover:text-green-800 font-medium text-sm"
+                              className="bg-green-600 hover:bg-green-800 font-medium text-sm px-3 py-2 flex items-center gap-1 rounded-lg"
                               title="Setujui"
                             >
-                              Setujui
+                              Terima <FontAwesomeIcon icon={faCheck}/>
                             </button>
                             <button
                               onClick={() => handleUpdateStatus(item.id, 'ditolak')}
-                              className="text-red-600 hover:text-red-800 font-medium text-sm"
+                              className="bg-red-600 hover:bg-red-800 font-medium text-sm px-3 py-2 flex items-center gap-1 rounded-lg"
                               title="Tolak"
                             >
-                              Tolak
+                              Tolak <FontAwesomeIcon icon={faX}/>
                             </button>
                           </div>
                         ) : (
                           <div className="text-xs text-gray-400">
-                            {item.status === 'disetujui' ? 'Disetujui' : 'Ditolak'} oleh {item.approved_by_name || 'Admin'}
+                            {item.status === 'disetujui' ? 'Disetujui' : 'Ditolak'} oleh {item.approved_by_name || 'Unknown'}
                           </div>
                         )}
-                        {item.bukti && (
-                          <button
-                            onClick={() => showImage(`Bukti ${item.jenis_izin} - ${item.nama}`, item.bukti)}
-                            className="text-blue-600 hover:text-blue-800 cursor-pointer"
-                            title="Lihat Bukti"
-                          >
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
-                        )}
+
                       </div>
+                    </td>
+                    <td className='px-6 py-4'>
+                      {item.bukti && (
+                        <button
+                          onClick={() => showImage(`Bukti ${item.jenis_izin} - ${item.nama}`, item.bukti)}
+                          className="bg-blue-600 hover:bg-blue-800 cursor-pointer px-3 py-2 flex items-center gap-1 rounded-lg"
+                          title="Lihat Bukti"
+                        >
+                          <span>Lihat</span><FontAwesomeIcon icon={faEye} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -5,7 +5,7 @@ import { RowDataPacket } from "mysql2";
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, debug } = await request.json();
+    const { username, password, rememberme } = await request.json();
 
     if (!username || !password) {
       return NextResponse.json(
@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
       success: true,
       token,
       user: {
-        //id: user.id,
-        //username: user.username,
         real_name:
           realname && realname.length > 0 ? realname[0].nama : user.username,
         type: user.type,
@@ -62,7 +60,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: rememberme ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7,
     });
     return response;
   } catch (error) {
