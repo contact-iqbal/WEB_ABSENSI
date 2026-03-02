@@ -157,7 +157,7 @@ export default function GajiPegawaiPage() {
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      
+
       // Cleanup: remove iframe after printing
       setTimeout(() => {
         document.body.removeChild(iframe);
@@ -187,13 +187,7 @@ export default function GajiPegawaiPage() {
             <button className="w-20 h-20 bg-white bg-opacity-20 hover:bg-neutral-200 rounded-full flex items-center justify-center"
               onClick={() => { sethiddengaji(!hiddengaji) }}
             >
-              {
-                hiddengaji ?
-                  <FontAwesomeIcon icon={faEyeSlash} className="text-4xl text-green-600" />
-                  :
-                  <FontAwesomeIcon icon={faEye} className="text-4xl text-green-600" />
-              }
-
+              <FontAwesomeIcon icon={hiddengaji ? faEye : faEyeSlash} className="text-4xl text-green-600" />
             </button>
           </div>
 

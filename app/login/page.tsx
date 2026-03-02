@@ -83,6 +83,7 @@ export default function LoginPage() {
         <div className="mb-10 flex items-center gap-2">
           {/* Logo Placeholder */}
           <img src="/logo.png" alt="Logo" className="w-32 h-12" />
+          <img src="/logo_rizqitour.png" alt="" className="h-14"/>
         </div>
 
         <div className="max-w-md w-full">
@@ -181,7 +182,8 @@ export default function LoginPage() {
         ></div>
 
         {/* Konten Dekoratif di Tengah */}
-        <div className="relative z-10 text-center">
+        <div className="flex flex-col relative z-10 text-center items-center">
+          <img src="/logo_rizqitour.png" alt="" width={'300px'}/>
           <img src="/logo.png" alt="" />
         </div>
 
