@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
+import { useRouter } from 'next/navigation';
 
 interface session {
   success: Boolean,
@@ -38,6 +39,10 @@ interface history {
 }
 
 export default function PegawaiDashboard() {
+  const navigate = useRouter();
+  return useEffect(() => {
+    navigate.push('/pegawai/profil')
+  })
   const [jamMasuk, setJamMasuk] = useState<string | null>(null);
   const [jamKeluar, setJamKeluar] = useState<string | null>(null);
   const [configData, SetConfigData] = useState<config>();

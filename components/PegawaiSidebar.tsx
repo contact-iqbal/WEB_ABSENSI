@@ -23,7 +23,6 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { title: 'Dashboard', icon: faHome, href: '/pegawai' },
   { title: 'Profil Saya', icon: faUser, href: '/pegawai/profil' },
   { title: 'Absensi', icon: faCalendarCheck, href: '/pegawai/absensi' },
   { title: 'Slip Gaji', icon: faMoneyBillWave, href: '/pegawai/gaji' },
@@ -64,7 +63,6 @@ export default function PegawaiSidebar({ isOpen, onClose }: PegawaiSidebarProps)
     onlyforuppermanagement = menuItems
   } else {
     onlyforuppermanagement = authResult && authResult.accountAccess != 'pegawai' ? [
-      { title: 'Dashboard', icon: faHome, href: '/pegawai' },
       { title: 'Profil Saya', icon: faUser, href: '/pegawai/profil' },
       { title: 'Absensi', icon: faCalendarCheck, href: '/pegawai/absensi' },
       { title: 'Slip Gaji', icon: faMoneyBillWave, href: '/pegawai/gaji' },

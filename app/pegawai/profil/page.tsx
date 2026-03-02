@@ -5,7 +5,9 @@ import {
   faUser, faEnvelope, faPhone, faMapMarkerAlt,
   faBriefcase, faCalendar, faEdit, faSave,
   faCamera, faSpinner, faIdCard, faMapPin,
-  faVenusMars, faPray, faTimes
+  faVenusMars, faPray, faTimes,
+  faEye,
+  faEyeSlash
 } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from 'react';
 import { showSuccess, showError, showToast, showInfo } from '@/lib/sweetalert';
@@ -156,6 +158,8 @@ export default function ProfilPage() {
       style: 'currency', currency: 'IDR', minimumFractionDigits: 0
     }).format(amount);
   };
+
+  const [seegaji, setseegaji] = useState(true)
 
   if (!profiledata) return <div className="p-12 text-center">Loading...</div>;
 
@@ -382,7 +386,7 @@ export default function ProfilPage() {
               <div className="space-y-6 bg-gray-50 p-6 rounded-2xl">
                 <div>
                   <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2">Salary Info</p>
-                  <p className="text-2xl font-bold text-gray-800">{formatRupiah(profiledata.gaji_pokok)}</p>
+                  <p className="text-2xl font-bold text-gray-800">{seegaji ? "---" : formatRupiah(profiledata.gaji_pokok)} <button onClick={() => {setseegaji(!seegaji)}}>{seegaji ? <FontAwesomeIcon icon={faEye} size={'xs'}/> : <FontAwesomeIcon icon={faEyeSlash} size={'xs'}/>}</button></p>
                   <p className="text-xs text-gray-500 mt-1">Gaji pokok bulanan</p>
                 </div>
                 <div>

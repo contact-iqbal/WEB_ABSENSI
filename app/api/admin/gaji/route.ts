@@ -186,8 +186,8 @@ export async function POST(request: NextRequest) {
 
         // cek lembur ygy
         const [lemburcheck]: any = await pool.execute(
-          'SELECT * FROM izin WHERE jenis_izin = "lembur" AND status = "disetujui" AND karyawan_id = ?',
-          [k.id]
+          'SELECT * FROM izin WHERE jenis_izin = "lembur" AND status = "disetujui" AND karyawan_id = ? AND MONTH(created_at) = ? AND YEAR(created_at) = ?',
+          [k.id, bulan, tahun]
         )
 
         let upah_lembur = 0;

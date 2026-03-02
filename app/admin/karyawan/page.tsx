@@ -368,7 +368,7 @@ export default function KaryawanPage() {
                   setNewEmployee({ ...newEmployee, password: e.target.value })
                 }
                 className="w-full px-4 py-2 border text-neutral-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Password"
+                placeholder="Password untuk login"
               />
             </div>
 
@@ -433,6 +433,7 @@ export default function KaryawanPage() {
               >
                 <option value="default">-</option>
                 <option value="pegawai_tetap">Pegawai Tetap</option>
+                <option value="pegawai_sementara">Pegawai Sementara</option>
               </select>
             </div>
           </div>

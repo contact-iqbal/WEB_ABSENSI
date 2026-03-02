@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL, faWarning, faFileExcel, faFileExport } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faDeleteLeft, faTrash, faPencil, faCheck, faCheckCircle, faCheckToSlot, faSave, faL, faWarning, faFileExcel, faFileExport, faTrashArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useRouter } from 'next/navigation';
@@ -26,7 +26,7 @@ interface pendingUpdateValue {
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
-  const [AccInfo, SetAccInfo] = useState([]);
+  const [AccInfo, SetAccInfo] = useState();
   const [editing, Setediting] = useState<null | Number>(0);
   const [selectedAccounts, setSelectedAccounts] = useState<Number[]>([]);
   const [showCheckboxes, setShowCheckboxes] = useState(false);
@@ -45,6 +45,16 @@ export default function KaryawanPage() {
   useEffect(() => {
     fetchkaryawan()
   }, [searchTerm])
+  const sessionaccess = async () => {
+    const sessions = await fetch('/api/auth/session')
+    const resultsession = await sessions.json()
+    if (resultsession.success) {
+      SetAccInfo(resultsession.accountAccess)
+    }
+  }
+  useEffect(() => {
+    sessionaccess()
+  }, [])
   const fetchkaryawan = async () => {
     const params = new URLSearchParams();
     if (searchTerm) params.append("search", searchTerm);
@@ -516,14 +526,14 @@ export default function KaryawanPage() {
             Export to Excel
           </button>
           <button
-            className={`flex items-center text-nowrap gap-2 px-4 py-2 ${showCheckboxes ? 'bg-gray-500 hover:bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} text-white rounded-lg transition-colors font-medium`}
+            className={`flex items-center text-nowrap gap-2 px-4 py-2 ${showCheckboxes ? 'bg-gray-500 hover:bg-gray-600' : 'bg-red-600 hover:bg-red-700'} text-white rounded-lg transition-colors font-medium`}
             onClick={() => {
               setShowCheckboxes(!showCheckboxes);
               if (showCheckboxes) setSelectedAccounts([]);
             }}
           >
-            <FontAwesomeIcon icon={showCheckboxes ? faCheckCircle : faCheckToSlot} />
-            {showCheckboxes ? 'Batal Pilih' : 'Pilih Masal'}
+            <FontAwesomeIcon icon={showCheckboxes ? faTrashArrowUp : faTrash} />
+            {showCheckboxes ? 'Batalkan Pilihan' : 'Mode Hapus'}
           </button>
           {showCheckboxes && selectedAccounts.length > 0 && (
             <button className="flex items-center text-nowrap gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium" onClick={handleMassDelete}>
@@ -638,9 +648,9 @@ export default function KaryawanPage() {
                     <td className="px-6 py-4 text-gray-600 truncate">{k.password}</td>
                   }
                   <td className="flex px-6 py-4 justify-end gap-1">
-                    {k.id !== 1 && (
+                    {k.id !== 1 && AccInfo === 'owner' && (
                       <div>
-                        <button className='bg-blue-500 px-4 py-2 hover:bg-blue-600 hover:scale-105 rounded-tl-lg rounded-bl-lg transition cursor-pointer'
+                        <button className='bg-blue-500 px-4 py-2 hover:bg-blue-600 hover:scale-105 rounded-lg transition cursor-pointer'
                           onClick={() => (handleEditSave(k))}
                         >
                           {editing == k.id ?
@@ -650,9 +660,9 @@ export default function KaryawanPage() {
                           }
 
                         </button>
-                        <button className='bg-red-500 px-4 py-2 hover:bg-red-600 hover:scale-105 rounded-tr-lg rounded-br-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
+                        {/* <button className='bg-red-500 px-4 py-2 hover:bg-red-600 hover:scale-105 rounded-tr-lg rounded-br-lg transition cursor-pointer' onClick={() => (handledelete(k.id))}>
                           <FontAwesomeIcon icon={faTrash} />
-                        </button>
+                        </button> */}
                       </div>
                     )}
                   </td>
