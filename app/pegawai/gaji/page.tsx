@@ -34,7 +34,6 @@ export default function GajiPegawaiPage() {
         const sessionRes = await fetch('/api/auth/session');
         const session = await sessionRes.json();
         setsession(session)
-        console.log(session)
 
         if (session.success) {
           const res = await fetch(`/api/karyawan/gaji?karyawan_id=${session.userId}`);
@@ -85,9 +84,6 @@ export default function GajiPegawaiPage() {
       setselectedgaji(prev => prev.filter(selectedId => selectedId !== id));
     }
   };
-  useEffect(() => {
-    console.log(selectedgaji)
-  }, [selectedgaji])
 
   const handlePrintSelected = async () => {
     const selectedData = gajiHistory.filter(item => selectedgaji.includes(item.id));

@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     // Total karyawan
     const [karyawanResult]: any = await pool.execute(
-      'SELECT COUNT(*) AS total_karyawan FROM karyawan WHERE jabatan != "superadmin"',
+      'SELECT COUNT(*) AS total_karyawan FROM karyawan LEFT JOIN users ON karyawan.id = users.id WHERE users.type != "owner"',
     );
 
     // Hadir hari ini
@@ -33,14 +33,23 @@ export async function GET(request: NextRequest) {
     );
 
     // Aktivitas terkini (gabungan dari berbagai tabel)
+    // const [aktivitas]: any = await pool.execute(
+    //   `SELECT 'absensi' AS tipe, k.nama, a.created_at AS waktu, 
+    //                 CONCAT('Melakukan absensi ', a.status) AS aktivitas
+    //          FROM absensi a
+    //          JOIN karyawan k ON a.id = k.id
+    //          WHERE DATE(a.created_at) = CURDATE()
+    //          UNION ALL
+    //          SELECT 'izin' AS tipe, k.nama, i.created_at AS waktu,
+    //                 CONCAT('Mengajukan ', i.jenis_izin) AS aktivitas
+    //          FROM izin i
+    //          JOIN karyawan k ON i.karyawan_id = k.id
+    //          WHERE DATE(i.created_at) = CURDATE()
+    //          ORDER BY waktu DESC
+    //          LIMIT 5`,
+    // );
     const [aktivitas]: any = await pool.execute(
-      `SELECT 'absensi' AS tipe, k.nama, a.created_at AS waktu, 
-                    CONCAT('Melakukan absensi ', a.status) AS aktivitas
-             FROM absensi a
-             JOIN karyawan k ON a.id = k.id
-             WHERE DATE(a.created_at) = CURDATE()
-             UNION ALL
-             SELECT 'izin' AS tipe, k.nama, i.created_at AS waktu,
+      `SELECT 'izin' AS tipe, k.nama, i.created_at AS waktu,
                     CONCAT('Mengajukan ', i.jenis_izin) AS aktivitas
              FROM izin i
              JOIN karyawan k ON i.karyawan_id = k.id
@@ -68,7 +77,8 @@ export async function GET(request: NextRequest) {
           tidak_hadir_hari_ini: tidakHadirHariIni,
           total_gaji_bulan_ini: parseFloat(gajiResult[0].total_gaji),
           absensi_terbaru: absensiTerbaru,
-          aktivitas_terkini: [{absen:aktivitas, keluar:aktivitas_keluar}],
+          // aktivitas_terkini: [{absen:aktivitas, keluar:aktivitas_keluar}],
+          aktivitas_terkini: [{absen:aktivitas}],
         },
       },
       { status: 200 },

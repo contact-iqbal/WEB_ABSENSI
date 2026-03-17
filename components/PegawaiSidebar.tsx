@@ -11,7 +11,8 @@ import {
   faFileAlt,
   faSignOutAlt,
   IconDefinition,
-  faArrowLeft
+  faArrowLeft,
+  faHouse
 } from '@fortawesome/free-solid-svg-icons';
 import { showConfirm } from '@/lib/sweetalert';
 import { useEffect, useState } from 'react';
@@ -23,6 +24,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  { title: 'Beranda', icon: faHouse, href: '/pegawai' },
   { title: 'Profil Saya', icon: faUser, href: '/pegawai/profil' },
   { title: 'Absensi', icon: faCalendarCheck, href: '/pegawai/absensi' },
   { title: 'Slip Gaji', icon: faMoneyBillWave, href: '/pegawai/gaji' },
@@ -63,6 +65,7 @@ export default function PegawaiSidebar({ isOpen, onClose }: PegawaiSidebarProps)
     onlyforuppermanagement = menuItems
   } else {
     onlyforuppermanagement = authResult && authResult.accountAccess != 'pegawai' ? [
+      { title: 'Beranda', icon: faHouse, href: '/pegawai' },
       { title: 'Profil Saya', icon: faUser, href: '/pegawai/profil' },
       { title: 'Absensi', icon: faCalendarCheck, href: '/pegawai/absensi' },
       { title: 'Slip Gaji', icon: faMoneyBillWave, href: '/pegawai/gaji' },

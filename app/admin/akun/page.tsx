@@ -308,7 +308,7 @@ export default function KaryawanPage() {
 
   const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const allIds = Karyawan.map(k => k.id).filter(id => id !== 1); // Exclude admin
+      const allIds = Karyawan.map(k => k.id).filter(id => id !== 0); 
       setSelectedAccounts(allIds);
     } else {
       setSelectedAccounts([]);
@@ -493,6 +493,7 @@ export default function KaryawanPage() {
           <h1 className="text-2xl font-bold text-gray-800">Data Akun Karyawan</h1>
           <p className="text-gray-600 mt-1">Kelola akun karyawan perusahaan</p>
         </div>
+        {AccInfo === 'owner' && (
         <div className="flex gap-3 flex-col md:flex-row">
           <div className='relative flex flex-row'>
             <button className={`flex items-center text-nowrap gap-2 px-4 py-2 bg-green-600 text-white ${uploaded.isuploaded ? 'rounded-tl-lg rounded-bl-lg' : 'rounded-lg'} hover:bg-green-700 transition-colors font-medium`} onClick={() => {
@@ -542,6 +543,7 @@ export default function KaryawanPage() {
             </button>
           )}
         </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg shadow-md">
@@ -575,7 +577,7 @@ export default function KaryawanPage() {
                       type="checkbox"
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                       onChange={handleSelectAll}
-                      checked={selectedAccounts.length > 0 && selectedAccounts.length === Karyawan.filter(k => k.id !== 1).length}
+                      checked={selectedAccounts.length > 0 && selectedAccounts.length === Karyawan.filter(k => k.id !== 0).length}
                     />
                   </th>
                 )}
@@ -588,9 +590,11 @@ export default function KaryawanPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-fit">
                   password
                 </th>
+                {AccInfo === 'owner' && (
                 <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Aksi
                 </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -598,7 +602,7 @@ export default function KaryawanPage() {
                 <tr key={k.id as number} className={`hover:bg-gray-50 ${showCheckboxes && selectedAccounts.includes(k.id) ? 'bg-blue-50' : ''}`}>
                   {showCheckboxes && (
                     <td className="px-6 py-4">
-                      {k.id !== 1 && (
+                      {k.id !== 0 && (
                         <input
                           type="checkbox"
                           className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
@@ -648,7 +652,7 @@ export default function KaryawanPage() {
                     <td className="px-6 py-4 text-gray-600 truncate">{k.password}</td>
                   }
                   <td className="flex px-6 py-4 justify-end gap-1">
-                    {k.id !== 1 && AccInfo === 'owner' && (
+                    {k.id !== 0 && AccInfo === 'owner' && (
                       <div>
                         <button className='bg-blue-500 px-4 py-2 hover:bg-blue-600 hover:scale-105 rounded-lg transition cursor-pointer'
                           onClick={() => (handleEditSave(k))}

@@ -10,9 +10,12 @@ import {
   faPeace,
   faUmbrellaBeach
 } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { showConfirm, showError, showInfo, showSuccess } from '@/lib/sweetalert';
 import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import React from 'react';
 
 interface session {
   success: Boolean,
@@ -39,10 +42,6 @@ interface history {
 }
 
 export default function PegawaiDashboard() {
-  const navigate = useRouter();
-  return useEffect(() => {
-    navigate.push('/pegawai/profil')
-  })
   const [jamMasuk, setJamMasuk] = useState<string | null>(null);
   const [jamKeluar, setJamKeluar] = useState<string | null>(null);
   const [configData, SetConfigData] = useState<config>();
@@ -53,6 +52,7 @@ export default function PegawaiDashboard() {
   const [loading, setLoading] = useState(false);
   const [isOnLeave, setIsOnLeave] = useState(false);
   const [leaveInfo, setLeaveInfo] = useState<any>(null);
+
 
   useEffect(() => {
     storesession()
@@ -189,86 +189,222 @@ export default function PegawaiDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const CameraModalContent = ({ onCaptured }: { onCaptured: (img: string, isnear: boolean) => void }) => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [location, setLocation] = useState<{ latitude: number | null, longitude: number | null } | null>(null);
+    const [withinradius, setwithinradius] = useState(false);
+    const [errorLoc, setErrorLoc] = useState<string | null>(null);
+
+    useEffect(() => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (err) => {
+            setErrorLoc(err.message);
+          }
+        );
+      } else {
+        setErrorLoc("Geolocation is not available in your browser.");
+      }
+    }, []);
+
+    useEffect(() => {
+      let activeStream: MediaStream | null = null;
+      const startCamera = async () => {
+        try {
+          const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          activeStream = mediaStream;
+          setStream(mediaStream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = mediaStream;
+          }
+        } catch (err) {
+          console.error("Gagal kamera:", err);
+        }
+      };
+
+      startCamera();
+
+      return () => {
+        if (activeStream) {
+          activeStream.getTracks().forEach(
+            track => {
+              track.stop();
+              track.enabled = false;
+            }
+          )
+        }
+      };
+    }, []);
+
+    // Memastikan srcObject terisi saat videoRef tersedia
+    useEffect(() => {
+      if (videoRef.current && stream) {
+        videoRef.current.srcObject = stream;
+      }
+    }, [stream]);
+
+    const takePhoto = () => {
+      if (videoRef.current && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d')?.drawImage(video, 0, 0);
+        const imgData = canvas.toDataURL('image/png');
+        setCapturedImage(imgData);
+        onCaptured(imgData, withinradius); // Kirim data ke parent jika butuh
+      }
+    };
+
+    const haversineDistance = (coords1: { latitude: number; longitude: number; }, coords2: { latitude: number; longitude: number; }) => {
+      const R = 6371; // Earth's radius in kilometers
+      const toRad = (value: number) => (value * Math.PI) / 180;
+
+      const dLat = toRad(coords2.latitude - coords1.latitude);
+      const dLon = toRad(coords2.longitude - coords1.longitude);
+      const lat1 = toRad(coords1.latitude);
+      const lat2 = toRad(coords2.latitude);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      return distance;
+    };
+
+    const isInsideArea = (userLocation: { latitude: any; longitude: any; }, specificLocation: { latitude: number; longitude: number; }, maxDistanceKm: number) => {
+      const distance = haversineDistance(userLocation, specificLocation);
+      return distance <= maxDistanceKm;
+    };
+    useEffect(() => {
+      const iswithinradius = isInsideArea({ latitude: location?.latitude, longitude: location?.longitude }, { latitude: -7.431955230651768, longitude: 112.70933383018054 }, 1)
+      setwithinradius(iswithinradius)
+    }, [location])
+
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', borderRadius: '8px' }} />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+        <button onClick={takePhoto} className="swal2-confirm swal2-styled">📸 Ambil Foto</button>
+        <br/>
+        <span>{withinradius ? 'kamu di dekat kantor' : 'kamu tidak dekat kantor'}</span>
+
+        {capturedImage && (
+          <div style={{ marginTop: '10px' }}>
+            <p>Preview:</p>
+            <img src={capturedImage} style={{ width: '100%', borderRadius: '8px' }} />
+          </div>
+        )}
+      </div>
+    );
+  };
   const handleAbsen = async () => {
     if (!Sessions?.userId) return;
+    const MySwal = withReactContent(Swal);
+    MySwal.fire({
+      html: (
+        <CameraModalContent
+          onCaptured={(img) => {
+            console.log("Foto tersimpan:", img);
+            //lanjut kirim serper le
+          }}
+        />
+      ),
+      showConfirmButton: false,
+      showCancelButton: true,
+      allowOutsideClick: false,
+      willClose:() => {}
+    })
 
-    try {
-      // Check if there's an approved leave for today
-      const checkIzin = await fetch(`/api/karyawan/izin?karyawan_id=${Sessions.userId}`);
-      const izinData = await checkIzin.json();
-      const todayStr = new Date().toISOString().split('T')[0];
-      const hasIzinToday = izinData.success && izinData.result.some((i: any) =>
-        i.status === 'disetujui' &&
-        todayStr >= new Date(i.tanggal_mulai).toLocaleDateString('en-CA', {
-          timeZone: 'Asia/Jakarta',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }) &&
-        todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
-          timeZone: 'Asia/Jakarta',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        })
-      );
+    // try {
+    //   // Check if there's an approved leave for today
+    //   const checkIzin = await fetch(`/api/karyawan/izin?karyawan_id=${Sessions.userId}`);
+    //   const izinData = await checkIzin.json();
+    //   const todayStr = new Date().toISOString().split('T')[0];
+    //   const hasIzinToday = izinData.success && izinData.result.some((i: any) =>
+    //     i.status === 'disetujui' &&
+    //     todayStr >= new Date(i.tanggal_mulai).toLocaleDateString('en-CA', {
+    //       timeZone: 'Asia/Jakarta',
+    //       year: 'numeric',
+    //       month: '2-digit',
+    //       day: '2-digit'
+    //     }) &&
+    //     todayStr <= new Date(i.tanggal_selesai).toLocaleDateString('en-CA', {
+    //       timeZone: 'Asia/Jakarta',
+    //       year: 'numeric',
+    //       month: '2-digit',
+    //       day: '2-digit'
+    //     })
+    //   );
 
-      if (hasIzinToday) {
-        showError('Gagal', 'Anda sedang dalam masa izin/cuti yang telah disetujui.');
-        return;
-      }
+    //   if (hasIzinToday) {
+    //     showError('Gagal', 'Anda sedang dalam masa izin/cuti yang telah disetujui.');
+    //     return;
+    //   }
 
-      const now = new Date();
-      const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', }).replace(':', '.');
+    //   const now = new Date();
+    //   const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', }).replace(':', '.');
 
-      if (!jamMasuk) {
-        const islate: boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
-        const res = await fetch('/api/karyawan/absen', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: Sessions?.userId,
-            absen_masuk: time,
-            status: islate ? 'terlambat' : 'hadir',
-            requests: 'jam_masuk'
-          })
-        })
-        const result = await res.json()
-        if (result.success) {
-          showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
-          setabsen(Sessions.userId);
-          getstats(Number(Sessions.userId));
-        } else {
-          showError('Gagal', result.message);
-        }
-      } else if (!jamKeluar) {
-        if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
-          const res = await fetch('/api/karyawan/absen', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: Sessions?.userId,
-              absen_keluar: time,
-              requests: 'jam_keluar'
-            })
-          })
-          const result = await res.json()
-          if (result.success) {
-            await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
-            setabsen(Sessions.userId);
-            getstats(Number(Sessions.userId));
-          } else {
-            showError('Gagal', result.message);
-          }
-        }
-      }
-    } catch (e) {
-      showError('Error', 'Terjadi kesalahan sistem');
-    }
+    //   if (!jamMasuk) {
+    //     const islate: boolean = toMinutes(time) > toMinutes(cektelat(configData && configData.jam_masuk, configData && configData.toleransi_telat))
+    //     const res = await fetch('/api/karyawan/absen', {
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify({
+    //         id: Sessions?.userId,
+    //         absen_masuk: time,
+    //         status: islate ? 'terlambat' : 'hadir',
+    //         requests: 'jam_masuk'
+    //       })
+    //     })
+    //     const result = await res.json()
+    //     if (result.success) {
+    //       showSuccess('Absen Masuk Berhasil!', `Tercatat pada ${time}`);
+    //       setabsen(Sessions.userId);
+    //       getstats(Number(Sessions.userId));
+    //     } else {
+    //       showError('Gagal', result.message);
+    //     }
+    //   } else if (!jamKeluar) {
+    //     if ((await showConfirm('Konfirmasi', 'Apakah anda yakin untuk ceklog pulang?')).isConfirmed) {
+    //       const res = await fetch('/api/karyawan/absen', {
+    //         method: 'POST',
+    //         headers: {
+    //           'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({
+    //           id: Sessions?.userId,
+    //           absen_keluar: time,
+    //           requests: 'jam_keluar'
+    //         })
+    //       })
+    //       const result = await res.json()
+    //       if (result.success) {
+    //         await showSuccess('Absen Keluar Berhasil!', `Tercatat pada ${time}`);
+    //         setabsen(Sessions.userId);
+    //         getstats(Number(Sessions.userId));
+    //       } else {
+    //         showError('Gagal', result.message);
+    //       }
+    //     }
+    //   }
+    // } catch (e) {
+    //   showError('Error', 'Terjadi kesalahan sistem');
+    // }
   };
 
   const getStatusButton = () => {
@@ -390,7 +526,7 @@ export default function PegawaiDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500 font-medium mb-1">Absensi Bulan Ini</p>
+              <p className="text-sm text-gray-500 font-medium mb-1">Total Absensi</p>
               <h3 className="text-3xl font-bold text-gray-800">{absenhistory && absenhistory?.hadir.toString()} Hari</h3>
             </div>
             <div className="bg-gray-100 w-14 h-14 rounded-xl flex items-center justify-center">

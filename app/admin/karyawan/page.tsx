@@ -67,7 +67,7 @@ interface pendingUpdateValue {
 }
 export default function KaryawanPage() {
   const [Karyawan, SetKaryawan] = useState<karyawan[]>([]);
-  const [editing, Setediting] = useState<null | Number>(0);
+  const [editing, Setediting] = useState<null | Number>(NaN);
   const [showModal, setShowModal] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     username: "",
@@ -79,7 +79,7 @@ export default function KaryawanPage() {
   });
 
   let [pendingUpdate, SetpendingUpdate] = useState<pendingUpdate>({
-    id: 0,
+    id: NaN,
     action: "update",
     value: {
       no_telp: '',
@@ -247,7 +247,7 @@ export default function KaryawanPage() {
       Setediting(null);
 
       SetpendingUpdate({
-        id: 0,
+        id: NaN,
         action: "update",
         value: {
           no_telp: '',
@@ -324,13 +324,22 @@ export default function KaryawanPage() {
           <h1 className="text-2xl font-bold text-gray-800">Data Karyawan</h1>
           <p className="text-gray-600 mt-1">Kelola data karyawan perusahaan</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          <FontAwesomeIcon icon={faPlus} />
-          Tambah Karyawan
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push('/test')}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+          >
+            <FontAwesomeIcon icon={faFileImport} />
+            Import XLS
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            Tambah Karyawan
+          </button>
+        </div>
       </div>
 
       {/* Modal Add Employee */}
@@ -575,7 +584,7 @@ export default function KaryawanPage() {
                   </div>
                 </div>
 
-                {k.id !== 1 && (
+                {k.id !== 0 && (
                   <button
                     className={`px-6 py-2 rounded-xl font-medium transition-all ${isEditing
                       ? "bg-green-600 text-white hover:bg-green-700 shadow-md shadow-green-100"

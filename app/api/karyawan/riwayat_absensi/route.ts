@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const statsQuery = `
       SELECT 
-        COUNT(CASE WHEN status IN ('hadir', 'terlambat') THEN 1 END) as hadir,
+        COUNT(CASE WHEN status = 'hadir' THEN 1 END) as hadir,
         COUNT(CASE WHEN status = 'terlambat' THEN 1 END) as terlambat,
         COUNT(CASE WHEN status = 'izin' THEN 1 END) as izin,
         COUNT(CASE WHEN status = 'sakit' THEN 1 END) as sakit,

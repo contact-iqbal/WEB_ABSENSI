@@ -42,12 +42,16 @@ export default function PegawaiHeader({ onMenuClick }: PegawaiHeaderProps) {
       >
         <FontAwesomeIcon icon={faBars} className="text-xl" />
       </button>
+      <div className='flex items-center gap-4'>
+        <img src="/logo_rizqitour.png" alt="" className="h-12" />
+        <img src="/logo.png" alt="Logo" className="h-10" />
+      </div>
 
       <div className="flex items-center gap-4 ml-auto">
-        <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+        {/* <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
           <FontAwesomeIcon icon={faBell} className="text-lg" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+        </button> */}
 
         <button
           className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -56,7 +60,7 @@ export default function PegawaiHeader({ onMenuClick }: PegawaiHeaderProps) {
           <span className="hidden sm:block text-sm font-medium">{authResult && (authResult.username)}</span>
           <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center overflow-hidden">
             {authResult != null &&
-              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" className='h-full w-full object-cover'/> : <FontAwesomeIcon icon={faUser} className="text-base" />)
+              (authResult.profile_pic ? <img src={authResult && (authResult.profile_pic)} alt="profile picture" className='h-full w-full object-cover' /> : <FontAwesomeIcon icon={faUser} className="text-base" />)
             }
           </div>
         </button>

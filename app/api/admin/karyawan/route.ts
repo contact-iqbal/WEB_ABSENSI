@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const devisi = searchParams.get("devisi");
     const search = searchParams.get("search");
 
-    let query = `SELECT * FROM karyawan WHERE jabatan != "superadmin"`
+    let query = `SELECT * FROM karyawan LEFT JOIN users ON karyawan.id = users.id WHERE users.type != "owner"`
     const params: any[] = [];
 
     if (search) {
@@ -21,12 +21,12 @@ export async function GET(request: NextRequest) {
       params.push(`${devisi}`);
     }
     const [result] = await pool.execute(
-      query,params
+      query, params
     );
     return NextResponse.json(
       {
         success: true,
-        debug: {query: query, params: params, devisi: devisi},
+        debug: { query: query, params: params, devisi: devisi },
         result: result,
       },
       { status: 200 },
@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const requestBody = await request.json();
-    console.log("--- DEBUG: Incoming POST request body ---", requestBody);
     const {
       id,
       action,
@@ -69,14 +68,12 @@ export async function POST(request: NextRequest) {
 
     if (action == "create") {
       const body = { username, password, nama, jabatan, devisi, status, NIK, tempat_lahir, tanggal_lahir, jenis_kel, agama, alamat, email, no_telp, gaji_pokok };
-      console.log("--- DEBUG: Received raw body for create action ---");
-      console.log(body);
 
       // Check for required fields
       if (!username || !password) {
         return NextResponse.json({ error: "Username dan password harus diisi" }, { status: 400 });
       }
-      
+
       // Check if username already exists
       const [existingUser]: any = await pool.execute(
         "SELECT id FROM users WHERE username = ?",
@@ -113,13 +110,11 @@ export async function POST(request: NextRequest) {
       }
       s_jabatan = String(s_jabatan).toLowerCase()
       s_status = String(s_status).toLowerCase().replaceAll(' ', "_")
-      
-      const sanitized_data = {s_nama, s_jabatan, s_devisi, s_status, s_NIK, s_tempat_lahir, s_tanggal_lahir, s_jenis_kel, s_agama, s_alamat, s_email, s_no_telp, s_gaji_pokok};
-      console.log("--- DEBUG: Sanitized data before insert ---");
-      console.log(sanitized_data);
 
-      // Hash password
-      // const hashedPassword = await hashPassword(password);
+      const sanitized_data = { s_nama, s_jabatan, s_devisi, s_status, s_NIK, s_tempat_lahir, s_tanggal_lahir, s_jenis_kel, s_agama, s_alamat, s_email, s_no_telp, s_gaji_pokok };
+
+      // Insert into users table
+      let newUserId;
       let hashedPassword
       if (String(password).startsWith('$')) {
         console.log('password already hashed using original')
@@ -129,13 +124,20 @@ export async function POST(request: NextRequest) {
         hashedPassword = await hashPassword(password);
       }
 
-      // Insert into users table
-      const [userResult]: any = await pool.execute(
-        "INSERT INTO users (username, password, type) VALUES (?, ?, ?)",
-        [username, hashedPassword, "pegawai"],
-      );
+      if (id) {
+        await pool.execute(
+          "INSERT INTO users (id, username, password, type) VALUES (?, ?, ?, ?)",
+          [id, username, hashedPassword, "pegawai"],
+        );
+        newUserId = id;
+      } else {
+        const [userResult]: any = await pool.execute(
+          "INSERT INTO users (username, password, type) VALUES (?, ?, ?)",
+          [username, hashedPassword, "pegawai"],
+        );
+        newUserId = userResult.insertId;
+      }
 
-      const newUserId = userResult.insertId;
       console.log(`--- DEBUG: Created user with ID: ${newUserId} ---`);
 
       // Insert into karyawan table

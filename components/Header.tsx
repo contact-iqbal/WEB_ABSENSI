@@ -15,7 +15,7 @@ interface Adminheaderprop {
   onMenuClick: () => void;
 }
 
-export default function Header({onMenuClick}: Adminheaderprop) {
+export default function Header({ onMenuClick }: Adminheaderprop) {
   const pathname = usePathname();
   const [authResult, setAuthResult] = useState<any>(null);
   useEffect(() => {
@@ -54,7 +54,9 @@ export default function Header({onMenuClick}: Adminheaderprop) {
         <FontAwesomeIcon icon={faBars} className="text-xl" />
       </button>
       <div className="flex items-center gap-4">
-        <h2 className="text-xl font-semibold text-gray-800"></h2>
+        {/* <h2 className="text-xl font-semibold text-gray-800"></h2> */}
+        <img src="/logo_rizqitour.png" alt="" className="h-12" />
+        <img src="/logo.png" alt="Logo" className="h-10" />
       </div>
 
       <div className="flex items-center gap-4">

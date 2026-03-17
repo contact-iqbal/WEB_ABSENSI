@@ -139,7 +139,6 @@ export default function ProfilPage() {
       setPreviewImage(profiledata?.profile_picture || null);
       setSelectedFile(null);
       setEdit(false);
-      showToast('Aksi Dibatalkan','info')
     };
   const aliasesdevisi = (alias: string) => {
     if (alias === "RT") return "Rizqi Tour";
@@ -243,7 +242,7 @@ export default function ProfilPage() {
                 <FontAwesomeIcon icon={faUser} className="text-blue-500" />
                 Informasi Pribadi
               </h3>
-              <div className="flex gap-2">
+              <div className={`flex gap-2 ${edit ? 'flex-row-reverse' : ''}`}>
                 {edit ? (
                   <>
                     <button
@@ -294,7 +293,7 @@ export default function ProfilPage() {
                 { label: 'Tempat Lahir', key: 'tempat_lahir', icon: faMapPin },
                 { label: 'Tanggal Lahir', key: 'tanggal_lahir', icon: faCalendar, type: 'date' },
                 { label: 'Jenis Kelamin', key: 'jenis_kel', icon: faVenusMars, type: 'select', options: [['laki_laki', 'Laki-laki'], ['perempuan', 'Perempuan']] },
-                { label: 'Agama', key: 'agama', icon: faPray, type: 'select', options: [['default','-'],['islam', 'Islam'], ['kristen', 'Kristen'], ['katolik', 'Katolik'], ['hindu', 'Hindu'], ['budha', 'Budha'], ['konghucu', 'Konghucu']] },
+                { label: 'Agama', key: 'agama', icon: faPray, type: 'select', options: [['islam', 'Islam'], ['kristen', 'Kristen'], ['katolik', 'Katolik'], ['hindu', 'Hindu'], ['budha', 'Budha'], ['konghucu', 'Konghucu']] },
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
@@ -320,7 +319,7 @@ export default function ProfilPage() {
                     )
                   ) : (
                     <p className="font-semibold text-gray-700 capitalize">
-                      {field.key === 'jenis_kel' ? (pendingUpdate.jenis_kel === 'laki_laki' ? 'Laki laki' : pendingUpdate.jenis_kel === 'perempuan' ? 'Perempuan' : '-') : field.key === 'tanggal_lahir' && pendingUpdate.tanggal_lahir != null ? (new Date(String(pendingUpdate.tanggal_lahir)).toLocaleDateString('id-ID', {day:'2-digit',month : 'long', year:'numeric'})) : pendingUpdate.agama === 'default' ? '-' : String(pendingUpdate[field.key as keyof profilestructure] || '-')}
+                      {field.key === 'jenis_kel' ? (pendingUpdate.jenis_kel === 'laki_laki' ? 'Laki laki' : pendingUpdate.jenis_kel === 'perempuan' ? 'Perempuan' : '-') : field.key === 'tanggal_lahir' && pendingUpdate.tanggal_lahir != null ? (new Date(String(pendingUpdate.tanggal_lahir)).toLocaleDateString('id-ID', {day:'2-digit',month : 'long', year:'numeric'})) : String(pendingUpdate[field.key as keyof profilestructure] || '-')}
                     </p>
                   )}
                 </div>
@@ -384,9 +383,9 @@ export default function ProfilPage() {
               </div>
 
               <div className="space-y-6 bg-gray-50 p-6 rounded-2xl">
-                <div>
+                <div className='flex flex-col'>
                   <p className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-2">Salary Info</p>
-                  <p className="text-2xl font-bold text-gray-800">{seegaji ? "---" : formatRupiah(profiledata.gaji_pokok)} <button onClick={() => {setseegaji(!seegaji)}}>{seegaji ? <FontAwesomeIcon icon={faEye} size={'xs'}/> : <FontAwesomeIcon icon={faEyeSlash} size={'xs'}/>}</button></p>
+                  <p className="flex text-2xl font-bold text-gray-800 justify-between"><span>{seegaji ? "---" : formatRupiah(profiledata.gaji_pokok)}</span> <button onClick={() => {setseegaji(!seegaji)}}>{seegaji ? <FontAwesomeIcon icon={faEye} size={'xs'}/> : <FontAwesomeIcon icon={faEyeSlash} size={'xs'}/>}</button></p>
                   <p className="text-xs text-gray-500 mt-1">Gaji pokok bulanan</p>
                 </div>
                 <div>

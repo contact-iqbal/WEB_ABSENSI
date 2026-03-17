@@ -172,9 +172,6 @@ export default function AbsensiPage() {
       console.log(e)
     }
   }
-  useEffect(() => (
-    console.log(updateabsen)
-  ), [updateabsen])
   return (
     <div className="space-y-6 pt-12">
       <div className="flex items-center justify-between">
@@ -268,8 +265,6 @@ export default function AbsensiPage() {
                 <option value="hadir">Hadir</option>
                 <option value="terlambat">Terlambat</option>
                 <option value="alpha">Alpha</option>
-                <option value="sakit">Sakit</option>
-                <option value="izin">Izin</option>
               </select>
             </div>
 
@@ -365,9 +360,6 @@ export default function AbsensiPage() {
               <option>Semua Status</option>
               <option>Hadir</option>
               <option>Terlambat</option>
-              <option>Izin</option>
-              <option>Cuti</option>
-              <option>Sakit</option>
               <option>Alpha</option>
             </select>
           </div>
@@ -444,9 +436,6 @@ export default function AbsensiPage() {
                           >
                             <option value="hadir">Hadir</option>
                             <option value="terlambat">Terlambat</option>
-                            <option value='izin'>Izin</option>
-                            <option value='cuti'>Cuti</option>
-                            <option value='sakit'>Sakit</option>
                             <option value='alpha'>Alpha</option>
                           </select>
                           :

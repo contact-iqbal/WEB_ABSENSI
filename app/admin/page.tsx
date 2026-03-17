@@ -85,32 +85,31 @@ export default function DashboardPage() {
     value: string;
     icon: IconDefinition;
     bgColor: string;
-    change: string;
+    change?: string;
   }> = [
       {
         title: "Total Karyawan",
         value: String(Data?.karyawan ?? 0),
         icon: faUsers,
         bgColor: "bg-neutral-500",
-        change: "+0%",
       },
-      {
-        title: "Hadir Hari Ini",
-        value: String(Data?.hadir_hari_ini ?? 0),
-        icon: faCheck,
-        bgColor: "bg-green-600",
-        change: "0%",
-      },
-      {
-        title: "Tidak Hadir Hari Ini",
-        value: String(Data?.tidak_hadir_hari_ini ?? 0),
-        icon: faTimes,
-        bgColor: "bg-red-600",
-        change: "0%",
-      },
+      // {
+      //   title: "Hadir Hari Ini",
+      //   value: String(Data?.hadir_hari_ini ?? 0),
+      //   icon: faCheck,
+      //   bgColor: "bg-green-600",
+      //   change: "0%",
+      // },
+      // {
+      //   title: "Tidak Hadir Hari Ini",
+      //   value: String(Data?.tidak_hadir_hari_ini ?? 0),
+      //   icon: faTimes,
+      //   bgColor: "bg-red-600",
+      //   change: "0%",
+      // },
       {
         title: "Total Gaji Bulan Ini",
-        value: authResult && authResult.accountAccess === 'hrd' ? '...' : formatRupiah(Data?.total_gaji_bulan_ini ?? 0) ,
+        value: authResult && authResult.accountAccess === 'hrd' ? '...' : formatRupiah(Data?.total_gaji_bulan_ini ?? 0),
         icon: faMoneyBillWave,
         bgColor: "bg-orange-400",
         change: "+0%",
@@ -126,7 +125,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
@@ -140,9 +139,11 @@ export default function DashboardPage() {
                 <h3 className="text-2xl font-bold text-gray-800 mt-2">
                   {stat.value}
                 </h3>
-                <p className="text-xs text-green-900 mt-2">
-                  {stat.change} dari bulan lalu
-                </p>
+                {stat.change &&
+                  <p className="text-xs text-green-900 mt-2">
+                    {stat.change} dari bulan lalu
+                  </p>
+                }
               </div>
               <div
                 className={`${stat.bgColor} hidden md:show w-14 h-14 rounded-full flex items-center justify-center text-white`}
@@ -187,10 +188,10 @@ export default function DashboardPage() {
                         : absen.status === "izin"
                           ? "bg-blue-100 text-blue-700"
                           : absen.status === "cuti"
-                          ? "bg-blue-100 text-blue-700"
-                          : absen.status === "sakit"
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-red-100 text-red-700"
+                            ? "bg-blue-100 text-blue-700"
+                            : absen.status === "sakit"
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-red-100 text-red-700"
                       }`}
                   >
                     {absen.status.charAt(0).toUpperCase() +
@@ -212,7 +213,7 @@ export default function DashboardPage() {
           </h3>
           {Data?.aktivitas_terkini && Data.aktivitas_terkini.length > 0 ? (
             <div className="space-y-3">
-              {Data?.aktivitas_terkini?.[0] &&
+              {/* {Data?.aktivitas_terkini?.[0] &&
                 [...Data.aktivitas_terkini[0].keluar,
                 ...Data.aktivitas_terkini[0].absen]
                   .sort(
@@ -220,6 +221,10 @@ export default function DashboardPage() {
                       new Date(b.waktu).getTime() -
                       new Date(a.waktu).getTime()
                   ).slice(0, 5)
+                  .map((aktivitas, index) => ( */}
+              {Data?.aktivitas_terkini?.[0] &&
+                [...Data.aktivitas_terkini[0].absen]
+                  .slice(0, 5)
                   .map((aktivitas, index) => (
                     <div
                       key={index}

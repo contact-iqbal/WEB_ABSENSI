@@ -187,20 +187,12 @@ export async function PUT(request: NextRequest) {
       keterangan,
     } = await request.json();
 
-    console.log(karyawan_id,
-      tanggal,
-      absen_masuk,
-      absen_keluar,
-      status,
-      keterangan)
-
     const debug = await pool.execute(
       `UPDATE absensi 
              SET absen_masuk = ?, absen_keluar = ?, status = ?, keterangan = ?
              WHERE id = ? AND tanggal = ?`,
       [absen_masuk, absen_keluar, status, keterangan, karyawan_id, tanggal],
     );
-    console.log(debug)
 
     return NextResponse.json(
       {
